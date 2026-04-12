@@ -1,0 +1,2184 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Height Comparison</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📏</text></svg>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500&display=swap');
+        
+        :root {
+            --bg-color: #f3f4f6;
+            --sidebar-bg: white;
+            --text-main: #1f2937;
+            --border-color: #e5e7eb;
+            --chart-bg: #ffffff;
+            --y-axis-bg: white;
+            --grid-line: #f0f0f0;
+            --major-grid: #e2e8f0;
+            --label-bg: rgba(45, 55, 72, 0.95);
+            --input-bg: #ffffff;
+            --input-border: #d1d5db;
+            --accent-box: #eff6ff;
+            --btn-shadow-blue: rgba(219, 234, 254, 1);
+            --btn-shadow-green: rgba(220, 252, 231, 1);
+            --scrollbar-track: #f1f5f9;
+            --scrollbar-thumb: #cbd5e1;
+            --scrollbar-thumb-hover: #94a3b8;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #0f172a;
+            --sidebar-bg: #1e293b;
+            --text-main: #f8fafc;
+            --border-color: #334155;
+            --chart-bg: #1e293b;
+            --y-axis-bg: #1e293b;
+            --grid-line: #334155;
+            --major-grid: #475569;
+            --label-bg: rgba(15, 23, 42, 0.95);
+            --input-bg: #0f172a;
+            --input-border: #475569;
+            --accent-box: #1e293b;
+            --btn-shadow-blue: rgba(30, 58, 138, 0.4);
+            --btn-shadow-green: rgba(21, 128, 61, 0.4);
+            --scrollbar-track: #1e293b;
+            --scrollbar-thumb: #475569;
+            --scrollbar-thumb-hover: #64748b;
+        }
+
+        body {
+            font-family: 'Kanit', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            overflow-x: hidden;
+            touch-action: manipulation;
+        }
+
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--scrollbar-track);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--scrollbar-thumb);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--scrollbar-thumb-hover);
+        }
+
+        .chart-container {
+            background-color: var(--chart-bg);
+            position: relative;
+            min-height: 750px;
+            border-bottom: 4px solid #374151;
+            overflow-x: hidden;
+            overflow-y: hidden;
+            white-space: nowrap;
+            display: flex;
+            align-items: flex-end;
+            padding-left: 70px;
+            padding-right: 100px;
+            padding-bottom: 30px; /* เพิ่มช่องว่างด้านล่างเพื่อให้เลข 0cm ไม่ขาด */
+        }
+
+        /* ซ่อน Scrollbar เมื่อไม่ใช้งาน และแสดงเมื่อ Hover */
+        .chart-container::-webkit-scrollbar-track {
+            background-color: transparent;
+        }
+        .chart-container::-webkit-scrollbar-thumb {
+            background-color: transparent;
+        }
+        .chart-container:hover::-webkit-scrollbar-thumb, .chart-container:active::-webkit-scrollbar-thumb {
+            background-color: var(--scrollbar-thumb);
+        }
+
+        .y-axis {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 70px;
+            border-right: 2px solid #9ca3af;
+            background: var(--y-axis-bg);
+            z-index: 50;
+        }
+
+        .y-label {
+            position: absolute;
+            right: 10px;
+            font-size: 11px;
+            color: var(--text-main);
+            transform: translateY(50%);
+            font-weight: 500;
+        }
+
+        .character-item {
+            position: relative;
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0 25px;
+            vertical-align: bottom;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        .character-img-wrapper {
+            position: relative;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .character-img {
+            max-width: none;
+            object-fit: contain;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+        }
+
+        .label-tag {
+            background: var(--label-bg);
+            color: white;
+            padding: 5px 10px; 
+            border-radius: 4px;
+            font-size: 12px;
+            margin-bottom: 14px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            line-height: 1.25;
+            z-index: 100;
+            pointer-events: none;
+            min-width: 65px;
+        }
+
+        .sidebar {
+            width: 325px;
+            height: 100vh;
+            overflow-y: auto;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            position: fixed;
+            left: 0;
+            top: 0;
+            z-index: 100;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar.collapsed {
+            transform: translateX(-100%);
+        }
+
+        .main-content {
+            margin-left: 325px;
+            padding: 16px;
+            min-height: 100vh;
+            transition: margin-left 0.3s ease;
+        }
+
+        #sidebarToggle {
+            background-color: var(--sidebar-bg);
+            border-color: var(--border-color);
+        }
+
+        /* Sidebar Elements Theme Sync */
+        .sidebar input, .sidebar select {
+            background-color: var(--input-bg) !important;
+            border-color: var(--input-border) !important;
+            color: var(--text-main) !important;
+        }
+
+        /* Character List Buttons Theming */
+        .btn-muted-themed {
+            background-color: var(--input-bg);
+            color: var(--text-main);
+            border-color: var(--border-color);
+        }
+        .btn-muted-themed:hover {
+            background-color: var(--accent-box);
+        }
+
+        #dragTip {
+            background-color: var(--sidebar-bg);
+            border-color: var(--border-color);
+            color: var(--text-main);
+            box-shadow: 0 4px 6px -1px var(--shadow-color);
+        }
+
+        /* Fix headers and labels in Sidebar/Modal */
+        .sidebar h1, .sidebar h2, .modal h3 {
+            color: var(--text-main);
+        }
+
+        .add-character-box {
+            background-color: var(--accent-box) !important;
+            border-color: var(--border-color) !important;
+        }
+
+        .character-list-item { background-color: var(--sidebar-bg) !important; border-color: var(--border-color) !important; }
+
+        .main-content.expanded {
+            margin-left: 0;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar { width: 100%; height: auto; position: relative; }
+            .main-content { margin-left: 0; }
+            #sidebarToggle { display: none; }
+        }
+
+        .grid-line {
+            position: absolute;
+            left: 70px;
+            right: 0;
+            height: 1px;
+            background-color: var(--grid-line);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .grid-line.major { background-color: var(--major-grid); height: 1.5px; }
+
+        .comparison-line {
+            position: absolute;
+            left: 70px;
+            right: 0;
+            height: 2px;
+            border-top: 2px dashed;
+        }
+        /* ขยาย Hitbox ของเส้นให้จับง่ายขึ้น */
+        .comparison-line::before {
+            content: '';
+            position: absolute;
+            top: -20px;
+            bottom: -20px;
+            left: 0;
+            right: 0;
+            cursor: inherit;
+        }
+
+        .comparison-line.adjustable {
+            cursor: ns-resize;
+        }
+
+        .comparison-line.adjusting {
+            cursor: grabbing;
+            border-top-style: solid;
+            border-top-width: 2px;
+            filter: drop-shadow(0 0 5px currentColor);
+        }
+
+        .add-line-btn {
+            position: absolute;
+            left: 45px;
+            width: 22px;
+            height: 22px;
+            background: #3b82f6;
+            color: white;
+            border-radius: 50%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 150;
+            font-size: 18px;
+            font-weight: bold;
+            transform: translateY(-50%);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            border: 2px solid white;
+            pointer-events: auto;
+        }
+        .y-axis:hover .add-line-btn {
+            display: flex;
+        }
+
+        .delete-line-btn {
+            position: absolute;
+            left: -70px;
+            width: 70px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transform: translateY(-50%);
+            z-index: 120;
+        }
+        .delete-line-btn div {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+            color: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            transition: transform 0.1s;
+        }
+        .delete-line-btn:hover div {
+            transform: scale(1.2);
+            background-color: #ef4444 !important;
+        }
+
+        .comparison-label {
+            position: absolute;
+            left: 5px; /* ย้ายมาฝั่งซ้ายเพื่อให้เห็นเลขได้ง่ายขึ้นเมื่อเส้นยาวมาก */
+            right: auto;
+            background: currentColor;
+            color: white;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 3px;
+            transform: translateY(-50%);
+            white-space: nowrap;
+            pointer-events: none;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+
+        .comparison-label span {
+            filter: brightness(0.8) contrast(1.2);
+            /* Ensure text contrast on labels */
+            background: rgba(0,0,0,0.15);
+            padding: 0 2px;
+            border-radius: 2px;
+        }
+
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            visibility: hidden;
+            opacity: 0;
+            transition: 0.2s;
+            backdrop-filter: blur(2px);
+        }
+        
+        .modal.active { visibility: visible; opacity: 1; }
+
+        .modal-content-wrapper > div {
+            background-color: var(--sidebar-bg);
+            opacity: 0;
+            transition: 0.2s;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 20px 25px rgba(0,0,0,0.15);
+        }
+
+        .modal.active .modal-content-wrapper > div {
+            opacity: 1;
+        }
+
+        .edit-preview-img {
+            max-height: 120px;
+            width: auto;
+            margin: 0 auto;
+            display: block;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+
+        /* Positioning Mode Styles */
+        .character-item.positioning::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border: 3px dashed #f59e0b;
+            border-radius: 4px;
+            pointer-events: none;
+            z-index: 99;
+        }
+
+        .resize-handle {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 10px;
+            background: rgba(245, 158, 11, 0.3);
+            cursor: ew-resize;
+            z-index: 101;
+            transition: background 0.2s;
+        }
+        .resize-handle:hover {
+            background: rgba(245, 158, 11, 0.8);
+        }
+        .resize-handle.left { left: 0; }
+        .resize-handle.right { right: 0; }
+
+        .character-item.positioning .character-img {
+            cursor: grab;
+        }
+
+        .character-item.positioning .character-img:active {
+            cursor: grabbing;
+        }
+
+        .position-guide {
+            position: absolute;
+            z-index: 65;
+            pointer-events: none;
+            font-size: 9px;
+            font-weight: bold;
+            color: #666;
+            background: rgba(255,255,255,0.9);
+            padding: 2px 4px;
+            border-radius: 2px;
+            white-space: nowrap;
+        }
+
+        .context-menu {
+            position: fixed;
+            background: var(--sidebar-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+            z-index: 300;
+            min-width: 160px;
+            overflow: hidden;
+        }
+
+        .context-menu button {
+            display: block;
+            width: 100%;
+            padding: 10px 14px;
+            text-align: left;
+            border: none;
+            background: none;
+            font-size: 13px;
+            font-family: 'Kanit', sans-serif;
+            cursor: pointer;
+            color: var(--text-main);
+            transition: 0.2s;
+        }
+
+        .context-menu button.active-mode {
+            background: var(--accent-box);
+            font-weight: bold;
+            color: #3b82f6;
+        }
+
+        .context-menu button:hover {
+            background: var(--grid-line);
+        }
+
+        /* Zoom & Language Controls */
+        .chart-controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            gap: 10px;
+            z-index: 80;
+            background: var(--sidebar-bg);
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            opacity: 0.3;
+            transition: opacity 0.3s ease;
+        }
+
+        #exportArea {
+            background-color: var(--chart-bg);
+            border-color: var(--border-color);
+        }
+
+        .chart-controls:hover, .chart-controls:focus-within {
+            opacity: 1;
+        }
+
+        .zoom-buttons {
+            display: flex;
+            gap: 4px;
+            border-right: 1px solid #e5e7eb;
+            padding-right: 10px;
+        }
+
+        .zoom-btn {
+            width: 32px;
+            height: 32px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--sidebar-bg);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            color: var(--text-main);
+            transition: 0.2s;
+        }
+
+        .zoom-btn:hover {
+            background: var(--grid-line);
+            border-color: var(--major-grid);
+        }
+
+        .zoom-btn:active {
+            background: #e5e7eb;
+        }
+
+        .language-selector {
+            padding: 4px 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--sidebar-bg);
+            cursor: pointer;
+            font-size: 12px;
+            font-family: 'Kanit', sans-serif;
+            color: var(--text-main);
+            transition: 0.2s;
+        }
+
+        .language-selector:hover {
+            background: var(--grid-line);
+            border-color: var(--major-grid);
+        }
+
+        #sidebarToggle {
+            transition: left 0.3s ease;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Enhanced Edit Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content-wrapper">
+            <div class="p-6 rounded-2xl shadow-2xl w-[320px] max-h-[90vh] overflow-y-auto">
+                <h3 class="text-xl font-bold mb-4 border-b pb-2" data-i18n="editTitle">แก้ไขข้อมูล</h3>
+                
+                <div class="space-y-4">
+                    <!-- Image Preview & Change -->
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 mb-2 uppercase" data-i18n="currentImage">รูปภาพปัจจุบัน</label>
+                        <div id="modalImgPreviewContainer" class="mb-2">
+                            <!-- Preview injected here -->
+                        </div>
+                        <input type="file" id="editImageInput" accept="image/*" class="w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:bg-blue-50 file:text-blue-700">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 mb-1 uppercase" data-i18n="inputLabel">ชื่อ</label>
+                        <input type="text" id="editName" class="w-full border p-2 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 mb-1 uppercase"><span data-i18n="heightLabel">ส่วนสูง</span> (<span class="current-unit-text">cm</span>)</label>
+                        <input type="number" id="editHeight" class="w-full border p-2 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 mb-1 uppercase" data-i18n="lineColor">สีเส้นเปรียบเทียบ</label>
+                    <input type="color" id="editLineColor" class="w-full h-10 border p-1 rounded-lg cursor-pointer bg-transparent" onchange="updateColorPreview()">
+                    </div>
+                </div>
+
+                <div class="flex gap-2 mt-8">
+                    <button onclick="closeEditModal()" class="flex-1 py-2.5 bg-gray-100 text-gray-600 font-medium rounded-xl hover:bg-gray-200 transition" data-i18n="cancel">ยกเลิก</button>
+                    <button onclick="saveEdit()" class="flex-1 py-2.5 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-200 transition" data-i18n="save">บันทึก</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button id="sidebarToggle" onclick="toggleSidebar()" class="fixed left-[325px] top-1/2 -translate-y-1/2 z-[110] border rounded-r-lg p-2 shadow-md transition-all duration-300 hidden md:flex items-center justify-center w-8 h-16">
+        <span id="toggleIcon" class="text-gray-600 font-bold">❮</span>
+    </button>
+
+    <div class="sidebar p-6 shadow-lg">
+        <h1 class="text-2xl font-bold mb-6" data-i18n="title">เทียบส่วนสูง</h1>
+        
+        <div class="add-character-box space-y-4 mb-8 p-4 rounded-xl border">
+            <div>
+                <label class="block text-xs font-bold text-blue-600 uppercase tracking-wider" data-i18n="inputLabel">ชื่อตัวละคร/วัตถุ</label>
+                <input type="text" id="nameInput" data-i18n="inputPlaceholder" placeholder="เช่น ส้มโอ" class="mt-1 block w-full rounded-md border-gray-300 border p-2 focus:ring-blue-500 outline-none">
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <label class="block text-xs font-bold text-blue-600 uppercase tracking-wider" data-i18n="heightLabel">ส่วนสูง</label>
+                    <input type="number" id="heightValue" value="170" step="0.1" class="mt-1 block w-full rounded-md border-gray-300 border p-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-blue-600 uppercase tracking-wider" data-i18n="unitLabel">หน่วย</label>
+                    <select id="heightUnit" class="mt-1 block w-full rounded-md border-gray-300 border p-2 outline-none">
+                        <option value="cm">cm</option>
+                        <option value="m">m</option>
+                        <option value="ft">ft</option>
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-blue-600 uppercase tracking-wider" data-i18n="imageLabel">รูปภาพ</label>
+                <div id="imagePreviewContainer" class="relative mt-2 hidden">
+                    <img id="imagePreview" src="" alt="Preview" class="w-full h-24 object-contain bg-gray-100 rounded-lg border border-gray-300">
+                    <button type="button" onclick="clearImagePreview()" class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition font-bold text-sm">
+                        ✕
+                    </button>
+                </div>
+                <div id="imageDropZone" class="mt-1 relative border-2 border-dashed rounded-xl p-4 transition-all hover:bg-blue-50 hover:border-blue-400 cursor-pointer group text-center" style="border-color: var(--input-border);">
+                    <input type="file" id="imageInput" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                    <div class="space-y-1">
+                        <svg class="mx-auto h-8 w-8 text-gray-400 group-hover:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.587-1.587a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                        <p class="text-xs text-gray-500" data-i18n="dragTipShort">คลิกหรือลากรูปมาวางที่นี่</p>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="addCharacter()" class="w-full bg-blue-600 text-white py-2.5 rounded-xl hover:bg-blue-700 transition font-bold shadow-md flex items-center justify-center gap-2" style="box-shadow: 0 4px 6px -1px var(--btn-shadow-blue);" data-i18n="addBtn">
+                เพิ่มเข้าไปในตาราง
+            </button>
+        </div>
+
+        <hr class="my-6">
+
+        <h2 class="text-sm font-bold text-gray-400 mb-4 uppercase tracking-widest" data-i18n="manageLabel">จัดการลำดับและรายการ</h2>
+        <div id="characterList" class="space-y-3 pb-10">
+            <p class="text-sm text-gray-400 italic text-center" data-i18n="emptyMsg">ยังไม่มีข้อมูล...</p>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div id="exportArea" class="rounded-2xl shadow-sm border overflow-hidden p-4 relative">
+            <div class="chart-controls">
+                <div class="zoom-buttons">
+                    <button class="zoom-btn" onclick="zoomOut()" data-i18n="zoomOut" title="ขยายออก">−</button>
+                    <button class="zoom-btn" onclick="zoomReset()" data-i18n="zoomReset" style="width: auto; padding: 0 8px;" title="รีเซ็ต">100%</button>
+                    <button class="zoom-btn" onclick="zoomIn()" data-i18n="zoomIn" title="ขยายเข้า">+</button>
+                </div>
+                <button id="themeToggle" class="zoom-btn" onclick="toggleTheme()" data-i18n="themeTitle" title="เปลี่ยนโหมด">
+                    <span id="themeIcon">🌙</span>
+                </button>
+                <select id="languageSelector" class="language-selector" onchange="changeLanguage(this.value)" data-i18n="langTitle" title="เปลี่ยนภาษา">
+                    <option value="th">ไทย</option>
+                    <option value="en">English</option>
+                    <option value="jp">日本語</option>
+                    <option value="cn">中文</option>
+                    <option value="kr">한국어</option>
+                </select>
+            </div>
+            <div id="chart" class="chart-container">
+                <div id="yAxis" class="y-axis"></div>
+            </div>
+        </div>
+
+        <div class="mt-4 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div id="dragTip" class="text-sm px-4 py-2 rounded-full border">
+                💡 <b>ลากแถบทางซ้าย</b> เพื่อเปลี่ยนลำดับรูป | <b>กดขวา</b> เพื่อจัดตำแหน่ง | <b>ปรับเส้น</b> เพื่อเปรียบเทียบจุดต่างๆ
+            </div>
+            <button onclick="downloadImage()" class="bg-green-600 text-white py-3 px-8 rounded-xl hover:bg-green-700 shadow-lg transition font-bold flex items-center gap-2" style="box-shadow: 0 10px 15px -3px var(--btn-shadow-green);" data-i18n="downloadBtn">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-1m-4-4-4 4m0 0-4-4m4 4V4"></path></svg>
+                บันทึกเป็นรูปภาพ
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let characters = [];
+        let extraLines = [];
+        let maxDisplayHeight = 250; 
+        let editingId = null;
+        let isDragging = false, isDraggingExtra = false, isPositioningDrag = false, isResizing = false;
+        let dragCharId = null, dragLineId = null, resizeDir = null;
+        let dragStartX = 0, dragStartY = 0;
+        let startOffsetX = 0, startOffsetY = 0;
+        let startWidthCm = 0, startLeftCropCm = 0;
+        let activeZIndexId = null;
+
+        const DB_NAME = 'HeightComparisonDB';
+        const STORE_NAME = 'characters';
+        let db = null;
+        let currentZoom = 1;
+        let currentLanguage = 'th';
+        let currentDisplayUnit = 'cm';
+        let lastInputUnit = 'cm';
+
+        // Language translations
+        const translations = {
+            th: {
+                title: 'เทียบส่วนสูง',
+                inputLabel: 'ชื่อตัวละคร/วัตถุ',
+                inputPlaceholder: 'เช่น ส้มโอ',
+                heightLabel: 'ส่วนสูง',
+                unitLabel: 'หน่วย',
+                imageLabel: 'รูปภาพ',
+                addBtn: 'เพิ่มเข้าไปในตาราง',
+                manageLabel: 'จัดการลำดับและรายการ',
+                emptyMsg: 'ยังไม่มีข้อมูล...',
+                dragTip: 'ลากแถบทางซ้ายเพื่อเปลี่ยนลำดับรูป | กดขวาเพื่อจัดตำแหน่ง | ปรับเส้นเพื่อเปรียบเทียบจุดต่างๆ',
+                downloadBtn: 'บันทึกเป็นรูปภาพ',
+                editTitle: 'แก้ไขข้อมูล',
+                colorPreview: 'ตัวอย่างสี',
+                positioning: 'จัดตำแหน่ง',
+                comparing: 'เปรียบเทียบ',
+                disablePos: 'กรุณาปิดโหมดเปรียบเทียบก่อน',
+                noImage: 'ไม่มีรูปภาพ (แสดงเป็นเงา)',
+                edit: 'แก้ไข',
+                enableCompare: 'เปิดเส้นเปรียบเทียบ',
+                disableCompare: 'ปิดเส้นเปรียบเทียบ',
+                lineOnTop: 'แสดงเส้นด้านหน้า',
+                lineBehind: 'แสดงเส้นด้านหลัง',
+                enableAllCompare: 'เปิดเส้นเปรียบเทียบทั้งหมด',
+                disableAllCompare: 'ปิดเส้นเปรียบเทียบทั้งหมด',
+                allLineOnTop: 'แสดงเส้นทั้งหมดด้านหน้า',
+                allLineBehind: 'แสดงเส้นทั้งหมดด้านหลัง',
+                enablePosMode: 'เปิดจัดตำแหน่ง',
+                disablePosMode: 'ปิดจัดตำแหน่ง',
+                adjustLine: 'ปรับเส้น',
+                ok: 'ตกลง',
+                cancel: 'ยกเลิก',
+                delete: 'ลบ',
+                save: 'บันทึก',
+                currentImage: 'รูปภาพปัจจุบัน',
+                lineColor: 'สีเส้นเปรียบเทียบ',
+                reset: 'รีเซ็ตข้อมูลทั้งหมด',
+                dragTipShort: 'คลิกหรือลากรูปมาวางที่นี่',
+                zoomIn: 'ขยายเข้า',
+                zoomOut: 'ขยายออก',
+                zoomReset: 'รีเซ็ต',
+                themeTitle: 'เปลี่ยนโหมด มืด/สว่าง',
+                langTitle: 'เปลี่ยนภาษา'
+            },
+            en: {
+                title: 'Height Comparison',
+                inputLabel: 'Character/Object Name',
+                inputPlaceholder: 'e.g., Pomelo',
+                heightLabel: 'Height',
+                unitLabel: 'Unit',
+                imageLabel: 'Image',
+                addBtn: 'Add to Comparison',
+                manageLabel: 'Manage List',
+                emptyMsg: 'No data yet...',
+                dragTip: 'Drag left bar to reorder | Right-click to position | Adjust line to compare height points',
+                downloadBtn: 'Download as Image',
+                editTitle: 'Edit Data',
+                colorPreview: 'Color Preview',
+                positioning: 'Position',
+                comparing: 'Compare',
+                disablePos: 'Please disable comparison mode first',
+                noImage: 'No image (shown as shadow)',
+                edit: 'Edit',
+                enableCompare: 'Enable Comparison Line',
+                disableCompare: 'Disable Comparison Line',
+                lineOnTop: 'Bring Line to Front',
+                lineBehind: 'Send Line to Back',
+                enableAllCompare: 'Enable All Comparison Lines',
+                disableAllCompare: 'Disable All Comparison Lines',
+                allLineOnTop: 'Bring All Lines to Front',
+                allLineBehind: 'Send All Lines to Back',
+                enablePosMode: 'Enable Positioning',
+                disablePosMode: 'Disable Positioning',
+                adjustLine: 'Adjust Line',
+                ok: 'OK',
+                cancel: 'Cancel',
+                delete: 'Delete',
+                save: 'Save',
+                currentImage: 'Current Image',
+                lineColor: 'Line Color',
+                reset: 'Reset All Data',
+                dragTipShort: 'Click or drag image here',
+                zoomIn: 'Zoom In',
+                zoomOut: 'Zoom Out',
+                zoomReset: 'Reset Zoom',
+                themeTitle: 'Toggle Dark/Light Mode',
+                langTitle: 'Change Language'
+            },
+            jp: {
+                title: '身長比較',
+                inputLabel: 'キャラクター/オブジェクト名',
+                inputPlaceholder: '例：ポメロ',
+                heightLabel: '身長',
+                unitLabel: '単位',
+                imageLabel: '画像',
+                addBtn: '比較に追加',
+                manageLabel: 'リスト管理',
+                emptyMsg: 'データなし...',
+                dragTip: '左バーをドラッグして並び替え | 右クリックで位置調整 | ラインを調整して身長ポイントを比較',
+                downloadBtn: '画像としてダウンロード',
+                editTitle: 'データ編集',
+                colorPreview: '色プレビュー',
+                positioning: '位置調整',
+                comparing: '比較中',
+                disablePos: '比較モードを先に無効にしてください',
+                noImage: '画像なし（シャドーで表示）',
+                edit: '編集',
+                enableCompare: '比較線を有効にする',
+                disableCompare: '比較線を無効にする',
+                lineOnTop: '線を最前面へ',
+                lineBehind: '線を背面へ',
+                enableAllCompare: 'すべての比較線を有効にする',
+                disableAllCompare: 'すべての比較線を無効にする',
+                allLineOnTop: 'すべての線を最前面へ',
+                allLineBehind: 'すべての線を背面へ',
+                enablePosMode: '位置調整を有効にする',
+                disablePosMode: '位置調整を無効にする',
+                adjustLine: 'ライン調整',
+                ok: 'OK',
+                cancel: 'キャンセル',
+                delete: '削除',
+                save: '保存',
+                currentImage: '現在の画像',
+                lineColor: '比較線の色',
+                reset: 'すべてのデータをリセット',
+                zoomIn: '拡大',
+                zoomOut: '縮小',
+                zoomReset: 'リセット',
+                themeTitle: 'ダーク/ライトモード切替',
+                langTitle: '言語切替'
+            },
+            cn: {
+                title: '身高比较',
+                inputLabel: '角色/物体名称',
+                inputPlaceholder: '例如：柚子',
+                heightLabel: '身高',
+                unitLabel: '单位',
+                imageLabel: '图像',
+                addBtn: '添加比较',
+                manageLabel: '管理列表',
+                emptyMsg: '暂无数据...',
+                dragTip: '拖动左边栏重新排序 | 右键调整位置 | 调整线条比较身高点',
+                downloadBtn: '下载为图片',
+                editTitle: '编辑数据',
+                colorPreview: '颜色预览',
+                positioning: '位置调整',
+                comparing: '比较中',
+                disablePos: '请先禁用比较模式',
+                noImage: '无图像（显示为阴影）',
+                edit: '编辑',
+                enableCompare: '开启比较线',
+                disableCompare: '关闭比较线',
+                lineOnTop: '线条置于顶层',
+                lineBehind: '线条置于底层',
+                enableAllCompare: '开启所有比较线',
+                disableAllCompare: '关闭所有比较线',
+                allLineOnTop: '所有线条置于顶层',
+                allLineBehind: '所有线条置于底层',
+                enablePosMode: '开启位置调整',
+                disablePosMode: '关闭位置调整',
+                adjustLine: '调整线条',
+                ok: '确定',
+                cancel: '取消',
+                delete: '删除',
+                save: '保存',
+                currentImage: '当前图像',
+                lineColor: '比较线颜色',
+                reset: '重置所有数据',
+                dragTipShort: '点击 or 拖拽图片',
+                zoomIn: '放大',
+                zoomOut: '缩小',
+                zoomReset: '重置',
+                themeTitle: '切换深色/浅色模式',
+                langTitle: '切换语言'
+            },
+            kr: {
+                title: '키 비교',
+                inputLabel: '캐릭터/객체 이름',
+                inputPlaceholder: '예: 자몬',
+                heightLabel: '키',
+                unitLabel: '단위',
+                imageLabel: '이미지',
+                addBtn: '비교에 추가',
+                manageLabel: '목록 관리',
+                emptyMsg: '데이터 없음...',
+                dragTip: '왼쪽 막대를 드래그하여 재정렬 | 마우스 오른쪽 클릭으로 위치 조정 | 선을 조정하여 키 포인트 비교',
+                downloadBtn: '이미지로 다운로드',
+                editTitle: '데이터 편집',
+                colorPreview: '색상 미리보기',
+                positioning: '위치 조정',
+                comparing: '비교 중',
+                disablePos: '먼저 비교 모드를 비활성화하세요',
+                noImage: '이미지 없음(음영으로 표시)',
+                edit: '편집',
+                enableCompare: '비교선 활성화',
+                disableCompare: '비교선 비활성화',
+                lineOnTop: '선을 앞으로 가져오기',
+                lineBehind: '선을 뒤로 보내기',
+                enableAllCompare: '모든 비교선 활성화',
+                disableAllCompare: '모든 비교선 비활성화',
+                allLineOnTop: '모든 선을 앞으로 가져오기',
+                allLineBehind: '모든 선을 뒤로 보내기',
+                enablePosMode: '위치 조정 활성화',
+                disablePosMode: '위치 조정 비활성화',
+                adjustLine: '선 조정',
+                ok: '확인',
+                cancel: '취소',
+                delete: '삭제',
+                save: '저장',
+                currentImage: '현재 이미지',
+                lineColor: '비교선 색상',
+                reset: '모든 데이터 초기화',
+                dragTipShort: '클릭 또는 드래그',
+                zoomIn: '확대',
+                zoomOut: '축소',
+                zoomReset: '초기화',
+                themeTitle: '다크/라이트 모드 전환',
+                langTitle: '언어 변경'
+            }
+        };
+
+        // Zoom functions
+        function zoomIn() {
+            currentZoom += 0.1;
+            applyZoom();
+        }
+
+        function zoomOut() {
+            if (currentZoom > 0.5) {
+                currentZoom -= 0.1;
+                applyZoom();
+            }
+        }
+
+        function zoomReset() {
+            currentZoom = 1;
+            applyZoom();
+        }
+
+        function applyZoom() {
+            renderChart();
+            const zoomButtons = document.querySelectorAll('.zoom-btn');
+            if (zoomButtons.length >= 2) {
+                zoomButtons[1].textContent = Math.round(currentZoom * 100) + '%';
+            }
+        }
+
+        // Language change function
+        function changeLanguage(lang) {
+            currentLanguage = lang;
+            localStorage.setItem('selectedLanguage', lang);
+            updateUIText();
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            const mainContent = document.querySelector('.main-content');
+            const toggleBtn = document.getElementById('sidebarToggle');
+            const icon = document.getElementById('toggleIcon');
+
+            const isCollapsed = sidebar.classList.toggle('collapsed');
+            mainContent.classList.toggle('expanded');
+
+            if (isCollapsed) {
+                toggleBtn.style.left = '0';
+                icon.textContent = '❯';
+            } else {
+                toggleBtn.style.left = '325px';
+                icon.textContent = '❮';
+            }
+            // Re-render chart to adjust to new width
+            setTimeout(renderChart, 300);
+        }
+
+        function updateUIText() {
+            const t = translations[currentLanguage];
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (!t[key]) return;
+
+                // Update Title (Tooltip) for controls
+                if (el.hasAttribute('title') || el.id === 'languageSelector') {
+                    el.title = t[key];
+                }
+
+                // Skip text replacement for buttons with specific fixed text or Select options
+                if (el.classList.contains('zoom-btn') || el.tagName === 'SELECT') {
+                    return;
+                }
+
+                    if (el.tagName === 'INPUT' && el.type === 'text') {
+                        el.placeholder = t[key];
+                    } else {
+                        // ตรวจสอบและรักษาไอคอน SVG ไว้หากมี (ป้องกันไอคอนหายตอนเปลี่ยนภาษา)
+                        const svg = el.querySelector('svg');
+                        if (svg) {
+                            el.innerHTML = '';
+                            el.appendChild(svg);
+                            el.appendChild(document.createTextNode(' ' + t[key]));
+                        } else {
+                            el.textContent = t[key];
+                        }
+                    }
+            });
+            const tipEl = document.getElementById('dragTip');
+            if (tipEl) tipEl.innerHTML = '💡 ' + t.dragTip;
+            // สั่งให้วาดรายการแถบซ้ายและกราฟใหม่เพื่อให้ภาษาอัปเดตตาม
+            updateUI();
+        }
+
+        // Load saved language preference
+        function loadLanguagePreference() {
+            const saved = localStorage.getItem('selectedLanguage');
+            if (saved) {
+                currentLanguage = saved;
+                document.getElementById('languageSelector').value = saved;
+                updateUIText();
+            }
+        }
+
+        // Initialize IndexedDB
+        async function initDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, 3);
+                request.onerror = () => reject(request.error);
+                request.onsuccess = () => {
+                    db = request.result;
+                    resolve(db);
+                };
+                request.onupgradeneeded = (event) => {
+                    const database = event.target.result;
+                    if (!database.objectStoreNames.contains(STORE_NAME)) {
+                        database.createObjectStore(STORE_NAME, { keyPath: 'id' });
+                    }
+                    if (!database.objectStoreNames.contains('settings')) {
+                        database.createObjectStore('settings');
+                    }
+                    if (!database.objectStoreNames.contains('extraLines')) {
+                        database.createObjectStore('extraLines', { keyPath: 'id' });
+                    }
+                };
+            });
+        }
+
+        // Save characters to IndexedDB
+        async function saveToIndexDB() {
+            if (!db) return;
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([STORE_NAME, 'extraLines'], 'readwrite');
+                const store = transaction.objectStore(STORE_NAME);
+                const lineStore = transaction.objectStore('extraLines');
+                
+                store.clear();
+                characters.forEach(char => {
+                    store.add({...char});
+                });
+
+                lineStore.clear();
+                extraLines.forEach(line => lineStore.add({...line}));
+                
+                transaction.onerror = () => reject(transaction.error);
+                transaction.oncomplete = () => resolve();
+            });
+        }
+
+        // Settings management in IndexedDB
+        async function saveSettings(key, value) {
+            if (!db) return;
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction(['settings'], 'readwrite');
+                const store = transaction.objectStore('settings');
+                store.put(value, key);
+                transaction.oncomplete = () => resolve();
+            });
+        }
+
+        async function getSetting(key) {
+            if (!db) return null;
+            return new Promise((resolve) => {
+                const transaction = db.transaction(['settings'], 'readonly');
+                const store = transaction.objectStore('settings');
+                const request = store.get(key);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => resolve(null);
+            });
+        }
+
+        async function toggleTheme() {
+            const currentTheme = document.body.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            applyTheme(newTheme);
+            await saveSettings('theme', newTheme);
+        }
+
+        function applyTheme(theme) {
+            document.body.setAttribute('data-theme', theme);
+            const icon = document.getElementById('themeIcon');
+            if (icon) icon.textContent = theme === 'dark' ? '☀️' : '🌙';
+        }
+
+        // Load characters from IndexedDB
+        async function loadFromIndexDB() {
+            if (!db) return;
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([STORE_NAME, 'extraLines'], 'readonly');
+                const store = transaction.objectStore(STORE_NAME);
+                const lineStore = transaction.objectStore('extraLines');
+                
+                const request = store.getAll();
+                request.onerror = () => reject(request.error);
+                request.onsuccess = () => {
+                    characters = request.result.sort((a, b) => (a.order || 0) - (b.order || 0));
+                    
+                    const lineRequest = lineStore.getAll();
+                    lineRequest.onsuccess = () => {
+                        extraLines = lineRequest.result;
+                        updateUI();
+                        resolve();
+                    };
+                };
+            });
+        }
+
+        // Initialize Sortable for drag-and-drop character list
+        const listEl = document.getElementById('characterList');
+        Sortable.create(listEl, {
+            animation: 150,
+            handle: '.drag-handle',
+            ghostClass: 'sortable-ghost',
+            onEnd: function (evt) {
+                const movedItem = characters.splice(evt.oldIndex, 1)[0];
+                characters.splice(evt.newIndex, 0, movedItem);
+                // อัปเดตเลขลำดับใหม่ทั้งหมด
+                characters.forEach((char, index) => {
+                    char.order = index;
+                });
+                updateUI();
+                saveToIndexDB();
+            }
+        });
+
+        // Add image preview listener
+        document.getElementById('imageInput').addEventListener('change', updateImagePreview);
+
+        // Drag and Drop implementation
+        const imageDropZone = document.getElementById('imageDropZone');
+
+        ['dragover', 'dragenter'].forEach(eventName => {
+            imageDropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                imageDropZone.classList.add('bg-blue-100', 'border-blue-500');
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            imageDropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                imageDropZone.classList.remove('bg-blue-100', 'border-blue-500');
+            }, false);
+        });
+
+        imageDropZone.addEventListener('drop', (e) => {
+            document.getElementById('imageInput').files = e.dataTransfer.files;
+            updateImagePreview();
+        }, false);
+
+        function unitToCm(value, unit) {
+            if (unit === 'm') return value * 100;
+            if (unit === 'ft') return value * 30.48;
+            return value;
+        }
+
+        function cmToUnit(cm, unit) {
+            if (unit === 'm') return cm / 100;
+            if (unit === 'ft') return cm / 30.48;
+            return cm;
+        }
+
+        function updateImagePreview() {
+            const fileInput = document.getElementById('imageInput');
+            const previewContainer = document.getElementById('imagePreviewContainer');
+            const previewImg = document.getElementById('imagePreview');
+
+            if (fileInput.files && fileInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    previewImg.src = e.target.result;
+                    previewContainer.classList.remove('hidden');
+                };
+                reader.readAsDataURL(fileInput.files[0]);
+            } else {
+                previewContainer.classList.add('hidden');
+                previewImg.src = '';
+            }
+        }
+
+        function clearImagePreview() {
+            document.getElementById('imageInput').value = '';
+            document.getElementById('imagePreviewContainer').classList.add('hidden');
+            document.getElementById('imagePreview').src = '';
+        }
+
+        function addCharacter() {
+            const name = document.getElementById('nameInput').value || 'ไม่มีชื่อ';
+            const rawVal = parseFloat(document.getElementById('heightValue').value);
+            const unit = document.getElementById('heightUnit').value;
+            const imgFile = document.getElementById('imageInput').files[0];
+            
+            if (isNaN(rawVal)) return;
+
+            const heightCm = unitToCm(rawVal, unit);
+            const id = Date.now();
+
+            const newChar = {
+                id: id,
+                name: name,
+                height: heightCm,      // Actual character height (constant unless edited)
+                compHeight: heightCm,  // Adjustable line level during compare mode
+                adjustStartHeight: heightCm,
+                imageOffset: 0,        // Crop offset for top blank space (cm)
+                positionOffsetY: 0,    // Y position offset (can go below 0 cm)
+                positionOffsetX: 0,    // X position offset (left/right)
+                customWidthCm: null,   // เริ่มต้นเป็น null เพื่อไม่ให้เกิดการครอบภาพอัตโนมัติ
+                leftCropCm: 0,
+                order: characters.length,
+                lineColor: '#ef4444',  // Default red
+                lineOnTop: true,       // Default line is in front
+                visible: true,
+                comparing: false,
+                isAdjusting: false,
+                isPositioning: false,  // New: position adjustment mode
+                image: null
+            };
+
+            if (imgFile) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    newChar.image = e.target.result;
+                    characters.push(newChar);
+                    updateUI();
+                    saveToIndexDB();
+                };
+                reader.readAsDataURL(imgFile);
+            } else {
+                characters.push(newChar);
+                updateUI();
+                saveToIndexDB();
+            }
+
+            document.getElementById('nameInput').value = '';
+            document.getElementById('imageInput').value = '';
+        }
+
+        function openEditModal(id) {
+            const char = characters.find(c => c.id === id);
+            if (!char) return;
+            editingId = id;
+            
+            document.getElementById('editName').value = char.name;
+            // Show height in current display unit
+            document.getElementById('editHeight').value = cmToUnit(char.height, currentDisplayUnit).toFixed(currentDisplayUnit === 'm' ? 2 : 1);
+            document.getElementById('editLineColor').value = char.lineColor;
+            
+            document.querySelectorAll('.current-unit-text').forEach(el => el.textContent = currentDisplayUnit);
+            
+            // Show current image preview in modal
+            const previewContainer = document.getElementById('modalImgPreviewContainer');
+            if (char.image) {
+                previewContainer.innerHTML = `<img src="${char.image}" class="edit-preview-img">`;
+            } else {
+                previewContainer.innerHTML = `
+                    <div class="edit-preview-img flex items-center justify-center text-gray-400 text-xs text-center p-4">
+                        ${translations[currentLanguage].noImage}
+                    </div>
+                `;
+            }
+            
+            document.getElementById('editImageInput').value = '';
+            document.getElementById('editModal').classList.add('active');
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').classList.remove('active');
+            editingId = null;
+        }
+
+        function updateColorPreview() {
+            const color = document.getElementById('editLineColor').value;
+            const preview = document.getElementById('colorPreview');
+            preview.style.backgroundColor = color;
+        }
+
+        async function saveEdit() {
+            const char = characters.find(c => c.id === editingId);
+            if (!char) return;
+
+            char.name = document.getElementById('editName').value;
+            const newVal = parseFloat(document.getElementById('editHeight').value);
+            
+            // Convert input back to CM for storage
+            const newHeight = unitToCm(newVal, currentDisplayUnit);
+            
+            // อัปเดตส่วนสูงและปรับเส้นเปรียบเทียบให้ตรงกับส่วนสูงใหม่โดยอัตโนมัติ
+            char.height = newHeight;
+            char.compHeight = newHeight;
+            char.lineColor = document.getElementById('editLineColor').value;
+
+            // Handle image change
+            const imgFile = document.getElementById('editImageInput').files[0];
+            if (imgFile) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    char.image = e.target.result;
+                    finishEditUpdate();
+                };
+                reader.readAsDataURL(imgFile);
+            } else {
+                finishEditUpdate();
+            }
+        }
+
+        function finishEditUpdate() {
+            closeEditModal();
+            updateUI();
+            saveToIndexDB();
+        }
+
+        function toggleComparing(id) {
+            const char = characters.find(c => c.id === id);
+            if (char) {
+                char.comparing = !char.comparing;
+                if (!char.comparing) {
+                    char.isAdjusting = false;
+                    char.adjustStartHeight = char.height;
+                }
+                char.isPositioning = false; // Exit positioning mode when toggling compare
+            }
+            updateUI();
+            saveToIndexDB();
+        }
+
+        function toggleAllComparing(enable) {
+            characters.forEach(char => {
+                char.comparing = enable;
+                if (!enable) char.isAdjusting = false;
+            });
+            updateUI();
+            saveToIndexDB();
+        }
+
+        function toggleAllLineOrder(onTop) {
+            characters.forEach(char => {
+                char.lineOnTop = onTop;
+            });
+            updateUI();
+            saveToIndexDB();
+        }
+
+        function toggleLineOrder(id) {
+            const char = characters.find(c => c.id === id);
+            if (char) {
+                char.lineOnTop = char.lineOnTop === undefined ? false : !char.lineOnTop;
+            }
+            updateUI();
+            saveToIndexDB();
+        }
+
+        function toggleAllLineOrder(onTop) {
+            characters.forEach(char => {
+                char.lineOnTop = onTop;
+            });
+            updateUI();
+            saveToIndexDB();
+        }
+
+        function toggleAdjustMode(id) {
+            const char = characters.find(c => c.id === id);
+            if (char) {
+                if (!char.isAdjusting) {
+                    // เริ่มโหมดปรับเส้น: ดึงส่วนสูงจริง (height) มาเป็นจุดเริ่มเพื่อให้ผู้ใช้เห็นตัวเลขที่คุ้นเคย
+                    char.compHeight = char.height; 
+                    char.adjustStartHeight = char.height;
+                    char.originalImageOffset = char.imageOffset || 0;
+                    char.isAdjusting = true;
+                    characters.forEach(c => { if(c.id !== id) c.isAdjusting = false; });
+                } else {
+                    // กดยืนยัน: คำนวณส่วนต่างเพื่อปรับ imageOffset (การ Crop)
+                    const chart = document.getElementById('chart');
+                    const baseHeight = 710;
+                    const pxPerCm = (baseHeight * currentZoom) / maxDisplayHeight;
+                    const bufferCm = 1 / pxPerCm; // เผื่อขอบ 1px
+
+                    // ส่วนต่างที่ต้อง Crop เพิ่ม = (ส่วนสูงเป้าหมาย) - (ระดับเส้นที่ผู้ใช้เล็งที่หัวจริง ๆ ในภาพ)
+                    const additionalCrop = char.height - char.compHeight;
+                    char.imageOffset = Math.max(0, (char.imageOffset || 0) + additionalCrop - bufferCm);
+                    
+                    // รีเซ็ตเส้นกลับไปที่ระดับส่วนสูงจริงของตัวละครเพื่อให้หัวพอดีกับเลขส่วนสูงบนไม้บรรทัด
+                    char.compHeight = char.height;
+
+                    char.isAdjusting = false;
+                    delete char.originalImageOffset;
+                    saveToIndexDB();
+                }
+            }
+            updateUI();
+        }
+
+        function cancelAdjust(id) {
+            const char = characters.find(c => c.id === id);
+            if (!char) return;
+            // Restore backup values
+            char.compHeight = char.adjustStartHeight;
+            char.imageOffset = char.originalImageOffset;
+            char.isAdjusting = false;
+            delete char.originalImageOffset;
+            updateUI();
+        }
+
+        function addExtraLine(height) {
+            extraLines.push({
+                id: Date.now(),
+                height: height,
+                color: '#3b82f6',
+                onTop: true
+            });
+            saveToIndexDB();
+            renderChart();
+        }
+
+        function removeExtraLine(id) {
+            extraLines = extraLines.filter(l => l.id !== id);
+            saveToIndexDB();
+            renderChart();
+        }
+
+        function startAdjustingExtra(e, id) {
+            isDraggingExtra = true;
+            dragLineId = id;
+            e.preventDefault();
+        }
+
+        function toggleExtraLineOrder(id) {
+            const line = extraLines.find(l => l.id === id);
+            if (line) {
+                line.onTop = !line.onTop;
+                saveToIndexDB();
+                renderChart();
+            }
+        }
+
+        function changeExtraLineColor(id, color) {
+            const line = extraLines.find(l => l.id === id);
+            if (line) {
+                line.color = color;
+                saveToIndexDB();
+                renderChart();
+            }
+        }
+
+        function showLineContextMenu(e, lineId) {
+            e.preventDefault();
+            e.stopPropagation();
+            const line = extraLines.find(l => l.id === lineId);
+            if (!line) return;
+
+            const existing = document.getElementById('contextMenu');
+            if (existing) existing.remove();
+
+            const menu = document.createElement('div');
+            menu.id = 'contextMenu';
+            menu.className = 'context-menu';
+
+            // ตรวจสอบพิกัดเมาส์หรือทัช เพื่อป้องกันเมนูกระโดดไปซ้ายบน (0,0)
+            const x = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+            const y = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+
+            menu.style.left = x + 'px';
+            menu.style.top = y + 'px';
+
+            const t = translations[currentLanguage];
+            menu.innerHTML = `
+                <button onclick="toggleExtraLineOrder(${lineId})">
+                    ${line.onTop ? t.lineBehind : t.lineOnTop}
+                </button>
+                <div style="padding: 8px 14px; border-top: 1px solid var(--border-color);">
+                    <div style="font-size: 11px; font-weight: bold; color: var(--text-main); margin-bottom: 5px;">${t.lineColor}</div>
+                    <input type="color" value="${line.color}" onchange="changeExtraLineColor(${lineId}, this.value)" style="width: 100%; height: 30px; cursor: pointer; background: transparent; border: none; padding: 0;">
+                </div>
+                <hr style="opacity: 0.1; margin: 4px 0;">
+                <button onclick="removeExtraLine(${lineId})" style="color: #ef4444;">🗑️ ${t.delete}</button>
+            `;
+
+            document.body.appendChild(menu);
+            setTimeout(() => {
+                document.addEventListener('click', closeContextMenu);
+            }, 0);
+        }
+
+        function toggleVisibility(id) {
+            const char = characters.find(c => c.id === id);
+            if (char) char.visible = !char.visible;
+            updateUI();
+            saveToIndexDB();
+        }
+
+        function removeCharacter(id) {
+            characters = characters.filter(c => c.id !== id);
+            updateUI();
+            saveToIndexDB();
+        }
+
+        function resetCharacterLayout(id) {
+            const char = characters.find(c => c.id === id);
+            if (char) {
+                char.compHeight = char.height;
+                char.imageOffset = 0;
+                char.positionOffsetY = 0;
+                char.positionOffsetX = 0;
+                char.customWidthCm = null;
+                char.leftCropCm = 0;
+                char.isPositioning = false;
+                char.isAdjusting = false;
+                char.comparing = false;
+                delete char.originalPos;
+                updateUI();
+                saveToIndexDB();
+            }
+        }
+
+        function togglePositioning(id) {
+            // Prevent positioning mode during comparing mode
+            const char = characters.find(c => c.id === id);
+            if (char && char.comparing) {
+                alert(translations[currentLanguage].disablePos);
+                return;
+            }
+
+            if (char) {
+                if (!char.isPositioning) {
+                    // Backup values for Cancel
+                    char.originalPos = {
+                        offsetX: char.positionOffsetX || 0,
+                        offsetY: char.positionOffsetY || 0,
+                        widthCm: char.customWidthCm, // Backup current width (could be null)
+                        leftCropCm: char.leftCropCm || 0
+                    };
+                    char.isPositioning = true;
+                    activeZIndexId = id;
+                } else {
+                    char.isPositioning = false;
+                    delete char.originalPos;
+                }
+                // Disable other positioning modes
+                characters.forEach(c => { 
+                    if (c.id !== id) c.isPositioning = false; 
+                });
+            }
+            updateUI();
+        }
+
+        function confirmPositioning(id) {
+            const char = characters.find(c => c.id === id);
+            if (char) {
+                char.isPositioning = false;
+                delete char.originalPos;
+                updateUI();
+                saveToIndexDB();
+            }
+        }
+
+        function cancelPositioning(id) {
+            const char = characters.find(c => c.id === id);
+            if (char && char.originalPos) {
+                char.positionOffsetX = char.originalPos.offsetX;
+                char.positionOffsetY = char.originalPos.offsetY;
+                char.customWidthCm = char.originalPos.widthCm;
+                char.leftCropCm = char.originalPos.leftCropCm;
+                char.isPositioning = false;
+                delete char.originalPos;
+                updateUI();
+            }
+        }
+
+        let contextMenuId = null;
+        function showContextMenu(e, charId) {
+            e.preventDefault();
+            contextMenuId = charId;
+            activeZIndexId = charId;
+
+            // Remove existing context menu
+            const existing = document.getElementById('contextMenu');
+            if (existing) existing.remove();
+
+            const menu = document.createElement('div');
+            menu.id = 'contextMenu';
+            menu.className = 'context-menu';
+
+            // ตรวจสอบพิกัดเมาส์หรือทัช
+            const x = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+            const y = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+
+            menu.style.left = x + 'px';
+            menu.style.top = y + 'px';
+
+            const char = characters.find(c => c.id === charId);
+            const t = translations[currentLanguage];
+            
+            if (!char) return;
+
+            // Check active states for highlighting in the menu
+            const posActive = char.isPositioning ? 'active-mode' : '';
+            const compActive = char.comparing ? 'active-mode' : '';
+            const adjustActive = char.isAdjusting ? 'active-mode' : '';
+
+            let menuHTML = `
+                <button onclick="togglePositioning(${charId})" class="${posActive}">
+                    ${char.isPositioning ? t.disablePosMode : t.enablePosMode}
+                </button>
+                <button onclick="toggleComparing(${charId})" class="${compActive}">
+                    ${char.comparing ? t.disableCompare : t.enableCompare}
+                </button>
+                ${char.comparing ? `
+                    <button onclick="toggleLineOrder(${charId})">
+                        ${char.lineOnTop === false ? t.lineOnTop : t.lineBehind}
+                    </button>
+                ` : ''}
+            `;
+            
+            // Show adjust line options only when comparing is enabled
+            if (char.comparing) {
+                if (char.isAdjusting) {
+                    menuHTML += `
+                        <button onclick="toggleAdjustMode(${charId})" class="${adjustActive}">${t.ok}</button>
+                        <button onclick="cancelAdjust(${charId})">${t.cancel}</button>
+                    `;
+                } else {
+                    menuHTML += `
+                        <button onclick="toggleAdjustMode(${charId})">${t.adjustLine}</button>
+                    `;
+                }
+            }
+            
+            menuHTML += `<button onclick="openEditModal(${charId})">${t.edit}</button>`;
+            
+            menuHTML += `
+                <hr style="opacity: 0.1; margin: 4px 0;">
+                <button onclick="toggleAllComparing(true)">${t.enableAllCompare}</button>
+                <button onclick="toggleAllComparing(false)">${t.disableAllCompare}</button>
+                <button onclick="toggleAllLineOrder(true)">${t.allLineOnTop}</button>
+                <button onclick="toggleAllLineOrder(false)">${t.allLineBehind}</button>
+                <hr style="opacity: 0.1; margin: 4px 0;">
+                <button onclick="resetCharacterLayout(${charId})" style="color: #ef4444;">↺ ${t.reset}</button>
+            `;
+
+            menu.innerHTML = menuHTML;
+
+            document.body.appendChild(menu);
+            renderChart(); // อัปเดตเพื่อให้ตัวละครที่ถูกเลือกขึ้นมาอยู่เลเยอร์บน
+
+            // Close menu when clicking elsewhere
+            setTimeout(() => {
+                document.addEventListener('click', closeContextMenu);
+            }, 0);
+        }
+
+        function closeContextMenu(e) {
+            const menu = document.getElementById('contextMenu');
+            // ป้องกันการปิดเมนูถ้าคลิกโดนกล่องเลือกสี (Input)
+            if (menu && e && e.target && menu.contains(e.target)) {
+                if (e.target.tagName === 'INPUT') return;
+            }
+
+            if (menu) {
+                menu.remove();
+                document.removeEventListener('click', closeContextMenu);
+                contextMenuId = null;
+            }
+        }
+
+        function updateUI() {
+            renderList();
+            renderChart();
+        }
+
+        function renderList() {
+            if (characters.length === 0) {
+                listEl.innerHTML = `<p class="text-sm text-gray-400 italic text-center">${translations[currentLanguage].emptyMsg}</p>`;
+                return;
+            }
+
+            const t = translations[currentLanguage];
+            listEl.innerHTML = characters.map(char => `
+                <div class="character-list-item p-3 rounded-xl border shadow-sm relative group" data-id="${char.id}">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="drag-handle p-1 hover:bg-gray-100 rounded cursor-grab">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="#9ca3af"><path d="M7 2a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zM7 5a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zM7 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm-3 3a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm-3 3a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/></svg>
+                        </div>
+                        <input type="checkbox" ${char.visible ? 'checked' : ''} onchange="toggleVisibility(${char.id})" class="h-4 w-4 text-blue-600 rounded-md">
+                        <div class="flex-1 min-w-0">
+                            <div class="text-sm font-bold truncate">${char.name}</div>
+                            <div class="text-xs text-gray-400">${cmToUnit(char.height, currentDisplayUnit).toFixed(currentDisplayUnit === 'm' ? 2 : 1)} ${currentDisplayUnit}</div>
+                        </div>
+                        <div class="flex gap-1">
+                            <button onclick="openEditModal(${char.id})" class="text-gray-400 hover:text-blue-500 hover:bg-blue-50 p-1.5 rounded-lg transition">
+                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                            </button>
+                            <button onclick="removeCharacter(${char.id})" class="text-gray-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition">
+                                <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="toggleComparing(${char.id})" class="flex-1 text-[10px] font-bold py-1.5 rounded-lg border transition ${char.comparing ? 'bg-red-500 text-white border-red-600 shadow-sm' : 'btn-muted-themed'}">
+                            ${char.comparing ? t.disableCompare : t.enableCompare}
+                        </button>
+                        ${char.comparing ? `
+                            <button onclick="toggleAdjustMode(${char.id})" class="flex-1 text-[10px] font-bold py-1.5 rounded-lg border transition ${char.isAdjusting ? 'bg-orange-500 text-white border-orange-500 shadow-sm' : 'btn-muted-themed'}">
+                                ${char.isAdjusting ? t.ok : t.adjustLine}
+                            </button>
+                            ${char.isAdjusting ? `<button onclick="cancelAdjust(${char.id})" class="flex-1 text-[10px] font-bold py-1.5 rounded-lg border transition btn-muted-themed">${t.cancel}</button>` : ''}
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderChart() {
+            const chart = document.getElementById('chart');
+            const yAxis = document.getElementById('yAxis');
+            chart.querySelectorAll('.character-item, .grid-line, .comparison-line, .extra-line-control').forEach(el => el.remove());
+            yAxis.innerHTML = '';
+
+            const visibleChars = characters.filter(c => c.visible);
+            
+            // Scalable height based on content
+            let currentMax = visibleChars.length > 0 
+                ? Math.max(...visibleChars.map(c => Math.max(c.height, c.compHeight))) 
+                : 200;
+
+            const threshold = 5; // Number of characters before scaling kicks in
+            let scaleMultiplier = 1; // Default scale is 1 (100%)
+            if (visibleChars.length > 3 && visibleChars.length <= threshold) { // Scale up to 180% as we approach the threshold
+                const minScale = 1;
+                const maxScale = 1.2;
+                scaleMultiplier = minScale + ((visibleChars.length - 1) / (threshold - 1)) * (maxScale - minScale);
+            } else if (visibleChars.length > threshold) {
+                scaleMultiplier = 1.2;
+            }
+
+            maxDisplayHeight = Math.ceil((currentMax + 40) / 10) * 10 * scaleMultiplier;
+
+            // Show scrollbar only when there are more than the threshold characters
+            chart.style.overflowX = visibleChars.length > threshold ? 'auto' : 'hidden'; 
+
+            // คำนวณพื้นที่ใช้งานจริงโดยหักลบ Padding ออก
+            const paddingBottom = 30;
+            const baseHeight = 710; 
+            const containerHeight = baseHeight * currentZoom;
+            chart.style.height = (containerHeight + paddingBottom + 40) + 'px';
+            const pxPerCm = containerHeight / maxDisplayHeight;
+
+            const getPixelPos = (cm) => (cm * pxPerCm) + paddingBottom;
+
+            // Render Grid & Labels
+            for (let h = 0; h <= maxDisplayHeight; h += 10) {
+                const bottomPos = getPixelPos(h);
+                const isMajor = h % 50 === 0;
+                
+                if (isMajor || h === 0) {
+                    const label = document.createElement('div');
+                    label.className = 'y-label';
+                    label.style.bottom = `${bottomPos}px`;
+                    label.innerText = `${cmToUnit(h, currentDisplayUnit).toFixed(currentDisplayUnit === 'cm' ? 0 : 1)} ${currentDisplayUnit}`;
+                    yAxis.appendChild(label);
+                }
+                
+                if (h >= 0) { // เริ่มที่ 0 เพื่อให้มีเส้นฐาน 0 cm
+                    const line = document.createElement('div');
+                    line.className = 'grid-line' + (isMajor ? ' major' : '');
+                    line.style.bottom = `${bottomPos}px`;
+                    chart.appendChild(line);
+                }
+            }
+
+            // Add Line Button on Y-Axis
+            const addBtn = document.createElement('div');
+            addBtn.id = 'yAxisAddBtn';
+            addBtn.className = 'add-line-btn';
+            addBtn.innerHTML = '+';
+            yAxis.appendChild(addBtn);
+
+            yAxis.onmousemove = (e) => {
+                const rect = yAxis.getBoundingClientRect();
+                const y = e.clientY - rect.top;
+                const safeY = Math.max(0, Math.min(y, rect.height - 30));
+                addBtn.style.top = safeY + 'px';
+                
+                const containerHeight = 710 * currentZoom;
+                const pxPerCm = containerHeight / maxDisplayHeight;
+                addBtn.dataset.height = ((rect.height - 30) - safeY) / pxPerCm;
+            };
+
+            addBtn.onclick = (e) => {
+                e.stopPropagation();
+                addExtraLine(parseFloat(addBtn.dataset.height));
+            };
+
+            // Render Comparison Lines (Z-index 60)
+            visibleChars.filter(c => c.comparing).forEach(char => {
+                const line = document.createElement('div');
+                line.className = 'comparison-line' + (char.isAdjusting ? ' adjustable adjusting' : '');
+                line.style.bottom = `${getPixelPos(char.compHeight)}px`;
+                line.style.color = char.lineColor;
+                line.style.borderColor = char.lineColor;
+                line.style.zIndex = char.lineOnTop === false ? '5' : '110';
+                
+                // Label shows Level of Line, not constant height
+                line.innerHTML = `
+                    <div class="comparison-label" style="background-color: ${char.lineColor}">
+                        ${char.name}: <span>${cmToUnit(char.compHeight, currentDisplayUnit).toFixed(currentDisplayUnit === 'm' ? 2 : 1)} ${currentDisplayUnit}</span>
+                    </div>
+                `;
+                
+                if (char.isAdjusting) {
+                    line.addEventListener('mousedown', (e) => startAdjusting(e, char.id));
+                    line.addEventListener('touchstart', (e) => startAdjusting(e, char.id), {passive: false});
+                }
+
+                chart.appendChild(line);
+            });
+
+            // Render Extra Comparison Lines
+            extraLines.forEach(line => {
+                const bottomPos = `${getPixelPos(line.height)}px`;
+
+                // 1. The visual line (can be behind or in front)
+                const lineEl = document.createElement('div');
+                lineEl.className = 'comparison-line extra-line adjustable';
+                lineEl.style.bottom = bottomPos;
+                lineEl.style.color = line.color;
+                lineEl.style.borderColor = line.color;
+                lineEl.style.zIndex = line.onTop ? '115' : '5';
+                
+                lineEl.addEventListener('mousedown', (e) => startAdjustingExtra(e, line.id));
+                lineEl.addEventListener('touchstart', (e) => startAdjustingExtra(e, line.id), {passive: false});
+                lineEl.oncontextmenu = (e) => showLineContextMenu(e, line.id);
+                chart.appendChild(lineEl);
+
+                // 2. The controls (Label + Delete button) - Always on top of Y-axis
+                const controlEl = document.createElement('div');
+                controlEl.className = 'extra-line-control';
+                controlEl.style.position = 'absolute';
+                controlEl.style.bottom = bottomPos;
+                controlEl.style.left = '0';
+                controlEl.style.right = '0';
+                controlEl.style.height = '0';
+                controlEl.style.zIndex = '120';
+                controlEl.style.pointerEvents = 'none';
+
+                controlEl.innerHTML = `
+                    <div class="comparison-label" style="background-color: ${line.color}; left: 70px; pointer-events: auto;">
+                        <span>${cmToUnit(line.height, currentDisplayUnit).toFixed(currentDisplayUnit === 'm' ? 2 : 1)} ${currentDisplayUnit}</span>
+                    </div>
+                    <div class="delete-line-btn" onclick="removeExtraLine(${line.id})" title="Delete Line" style="pointer-events: auto;">
+                        <div style="background: ${line.color}">✕</div>
+                    </div>
+                `;
+                chart.appendChild(controlEl);
+            });
+
+            // Render Characters (In array order)
+            visibleChars.forEach(char => {
+                const charEl = document.createElement('div');
+                charEl.className = 'character-item' + (char.isPositioning ? ' positioning' : '');
+                charEl.dataset.id = char.id;
+                
+                const paddingBottom = 30;
+                const baseHeight = 710; 
+                const containerHeight = baseHeight * currentZoom;
+                const pxPerCm = containerHeight / maxDisplayHeight;
+
+                const heightPx = char.height * pxPerCm;
+                const widthCm = char.customWidthCm;
+                const widthPx = widthCm ? widthCm * pxPerCm : null; 
+                const leftCropPx = (char.leftCropCm || 0) * pxPerCm;
+                const offsetPx = char.imageOffset * pxPerCm;
+                
+                const offsetYPx = char.positionOffsetY * pxPerCm;
+                const offsetXPx = char.positionOffsetX;
+
+                // กำหนดลำดับเลเยอร์: จัดตำแหน่ง(100) > คลิกปัจจุบัน(90) > ทั่วไป(10)
+                const zIndex = char.isPositioning ? 100 : (char.id === activeZIndexId ? 90 : 10);
+
+                // ล็อกพื้นที่ตัวละครข้างๆ ไว้ขณะจัดตำแหน่ง เพื่อไม่ให้เลย์เอาท์ขยับจนกว่าจะยืนยัน
+                if (char.isPositioning && char.originalPos) {
+                    const layoutWidthCm = char.originalPos.widthCm || (char.height / 2.5);
+                    charEl.style.width = (layoutWidthCm * pxPerCm) + 'px';
+                }
+
+                charEl.innerHTML = `
+                    <div class="label-tag">
+                        <span class="name font-bold block">${char.name}</span>
+                        <span class="h-val text-[10px] opacity-80">${cmToUnit(char.height, currentDisplayUnit).toFixed(currentDisplayUnit === 'm' ? 2 : 1)} ${currentDisplayUnit}</span>
+                        ${char.isPositioning ? `
+                            <div class="flex gap-1 mt-1 pointer-events-auto">
+                                <button onclick="confirmPositioning(${char.id})" class="bg-green-500 hover:bg-green-600 text-white p-1 rounded transition" title="Confirm">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
+                                </button>
+                                <button onclick="cancelPositioning(${char.id})" class="bg-red-500 hover:bg-red-600 text-white p-1 rounded transition" title="Cancel">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                                </button>
+                            </div>
+                        ` : ''}
+                    </div>
+                    <div class="character-img-wrapper" onclick="activeZIndexId = ${char.id}; renderChart();" style="${widthPx ? `width: ${widthPx}px;` : ''} height: ${heightPx + offsetPx}px; overflow: visible; align-items: flex-start; justify-content: flex-start; transform: translateY(${offsetYPx}px) translateX(${offsetXPx}px); z-index: ${zIndex};" oncontextmenu="showContextMenu(event, ${char.id})">
+                        ${char.image ? `<img src="${char.image}" class="character-img" style="height: ${heightPx + offsetPx}px; margin-top: 0px; margin-left: -${leftCropPx}px; pointer-events: ${char.isPositioning ? 'none' : 'auto'}; display: block; max-width: none;">` : `<div class="character-placeholder" style="height: ${heightPx}px; width: ${widthPx || (char.height / 2.5) * pxPerCm}px; border-radius: ${heightPx/5}px ${heightPx/5}px 0 0; background-color: rgba(59, 130, 246, 0.4); border: 2px solid #3b82f6;"></div>`}
+                        ${char.isPositioning ? `
+                            <div class="resize-handle left" onmousedown="startResizing(event, ${char.id}, 'left')" ontouchstart="startResizing(event, ${char.id}, 'left')"></div>
+                            <div class="resize-handle right" onmousedown="startResizing(event, ${char.id}, 'right')" ontouchstart="startResizing(event, ${char.id}, 'right')"></div>
+                        ` : ''}
+                    </div>
+                `;
+
+                // Add drag event listeners for positioning mode
+                if (char.isPositioning) {
+                    const imgWrapper = charEl.querySelector('.character-img-wrapper');
+                    imgWrapper.addEventListener('mousedown', (e) => startPositioningDrag(e, char.id));
+                    imgWrapper.addEventListener('touchstart', (e) => startPositioningDrag(e, char.id), {passive: false});
+                }
+
+                chart.appendChild(charEl);
+            });
+
+            // ปรับความยาวของเส้นตารางและเส้นเปรียบเทียบให้เท่ากับเนื้อหาจริง (ไม่ยาวเกินไป)
+            const fullWidth = chart.scrollWidth;
+            const lineTargetWidth = Math.max(chart.clientWidth, fullWidth) - 70;
+            chart.querySelectorAll('.grid-line, .comparison-line').forEach(line => {
+                line.style.width = `${lineTargetWidth}px`;
+            });
+        }
+
+        // Drag-to-Adjust Logic for Comparison Line
+        function startAdjusting(e, id) {
+            isDragging = true;
+            dragCharId = id;
+            e.preventDefault();
+        }
+
+        function startResizing(e, id, dir) {
+            e.stopPropagation();
+            const char = characters.find(c => c.id === id);
+            if (!char) return;
+
+            isResizing = true;
+            resizeDir = dir;
+            dragCharId = id;
+            activeZIndexId = id;
+
+            const chart = document.getElementById('chart');
+            const baseHeight = 710;
+            const pxPerCm = (baseHeight * currentZoom) / maxDisplayHeight;
+            
+            const wrapperEl = document.querySelector(`.character-item[data-id="${id}"] .character-img-wrapper`);
+            startWidthCm = char.customWidthCm || (wrapperEl.offsetWidth / pxPerCm);
+            startLeftCropCm = char.leftCropCm || 0;
+            startOffsetX = char.positionOffsetX || 0;
+            dragStartX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+            
+            e.preventDefault();
+        }
+
+        // Drag-to-Position Logic for Characters
+        function startPositioningDrag(e, id) {
+            const char = characters.find(c => c.id === id);
+            if (!char) return;
+
+            isPositioningDrag = true;
+            dragCharId = id;
+            activeZIndexId = id;
+            
+            startOffsetX = char.positionOffsetX || 0;
+            startOffsetY = char.positionOffsetY || 0;
+            dragStartX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+            dragStartY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+            
+            e.preventDefault();
+        }
+
+        window.addEventListener('mousemove', (e) => handleDrag(e));
+        window.addEventListener('touchmove', (e) => handleDrag(e), {passive: false});
+        
+        const stopDragging = () => {
+            if (isDragging || isDraggingExtra || isPositioningDrag || isResizing) {
+                saveToIndexDB(); // บันทึกตำแหน่งสุดท้ายลงฐานข้อมูลเมื่อปล่อยมือ
+            }
+            isDragging = false; isDraggingExtra = false; isPositioningDrag = false; isResizing = false; dragCharId = null; dragLineId = null;
+        };
+        window.addEventListener('mouseup', stopDragging);
+        window.addEventListener('touchend', stopDragging);
+
+        function handleDrag(e) {
+            const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+            const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+
+            // Handle Comparison Line Adjusting
+            if ((isDragging && dragCharId !== null) || (isDraggingExtra && dragLineId !== null)) {
+                const chart = document.getElementById('chart');
+                const rect = chart.getBoundingClientRect();
+                
+                const baseHeight = 710;
+                const pxPerCm = (baseHeight * currentZoom) / maxDisplayHeight;
+                // คำนวณความสูงจากเส้น 0cm (ซึ่งอยู่สูงจากขอบล่างของ element 30px)
+                let yFromBottom = (rect.bottom - 30) - clientY;
+                let newHeightCm = yFromBottom / pxPerCm;
+
+                // Bounds locking
+                if (newHeightCm < 0) newHeightCm = 0;
+                if (newHeightCm > maxDisplayHeight) newHeightCm = maxDisplayHeight;
+
+                if (isDragging) {
+                    const char = characters.find(c => c.id === dragCharId);
+                    if (char) {
+                        char.compHeight = newHeightCm;
+                        renderChart();
+                    }
+                }
+
+                if (isDraggingExtra) {
+                    const line = extraLines.find(l => l.id === dragLineId);
+                    if (line) {
+                        line.height = newHeightCm;
+                        renderChart();
+                    }
+                }
+            }
+
+            // Handle Character Positioning
+            if (isPositioningDrag && dragCharId !== null) {
+                const deltaX = clientX - dragStartX;
+                const deltaY = clientY - dragStartY;
+
+                const baseHeight = 710;
+                const pxPerCm = (baseHeight * currentZoom) / maxDisplayHeight;
+
+                const char = characters.find(c => c.id === dragCharId);
+                if (char) {
+                    char.positionOffsetX = startOffsetX + deltaX;
+                    char.positionOffsetY = startOffsetY + (deltaY / pxPerCm);
+                    renderChart();
+                }
+            }
+
+            // Handle Resizing
+            if (isResizing && dragCharId !== null) {
+                const deltaX = clientX - dragStartX;
+                
+                const baseHeight = 710;
+                const pxPerCm = (baseHeight * currentZoom) / maxDisplayHeight;
+                const deltaCm = deltaX / pxPerCm;
+
+                const char = characters.find(c => c.id === dragCharId);
+                if (char) {
+                    if (resizeDir === 'right') {
+                        // ปรับฝั่งขวา: เปลี่ยนเฉพาะความกว้าง
+                        char.customWidthCm = Math.max(1, startWidthCm + deltaCm);
+                    } else if (resizeDir === 'left') {
+                        // ปรับฝั่งซ้าย: ลดความกว้าง + เพิ่ม Crop ซ้าย + ขยับตำแหน่งชดเชยเพื่อให้รูปนิ่ง
+                        const newWidthCm = Math.max(1, startWidthCm - deltaCm);
+                        const actualDeltaCm = startWidthCm - newWidthCm;
+                        char.customWidthCm = newWidthCm;
+                        char.leftCropCm = startLeftCropCm + actualDeltaCm;
+                        char.positionOffsetX = startOffsetX + (actualDeltaCm * pxPerCm);
+                    }
+                    renderChart();
+                }
+            }
+        }
+
+        async function downloadImage() {
+            const exportArea = document.getElementById('exportArea');
+            const chart = document.getElementById('chart');
+            
+            // สร้าง clone ของ exportArea เพื่อจัดการ
+            const clonedExportArea = exportArea.cloneNode(true);
+            const controls = clonedExportArea.querySelector('.chart-controls');
+            if (controls) controls.remove();
+            
+            const clonedChart = clonedExportArea.querySelector('#chart');
+            
+            // ปรับให้ chart clone ไม่ scroll - แสดงทั้งหมด
+            clonedChart.style.overflowX = 'visible';
+            clonedChart.style.overflowY = 'visible';
+            clonedChart.style.whiteSpace = 'normal';
+            clonedChart.style.width = 'auto';
+            clonedChart.style.minWidth = '100%';
+            
+            // ซ่อนจากการเห็น
+            clonedExportArea.style.position = 'fixed';
+            clonedExportArea.style.left = '-9999px';
+            clonedExportArea.style.top = '-9999px';
+            
+            // เพิ่มไปยัง DOM ชั่วคราว
+            document.body.appendChild(clonedExportArea);
+            
+            // รอให้ browser render
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            try {
+                const canvas = await html2canvas(clonedExportArea, { 
+                    scale: 2, 
+                    useCORS: true,
+                    letterRendering: true,
+                    backgroundColor: '#ffffff'
+                });
+                
+                const link = document.createElement('a');
+                link.download = `height-comparison-${Date.now()}.png`;
+                link.href = canvas.toDataURL();
+                link.click();
+            } finally {
+                // ล้างความวุ่นวายออก
+                document.body.removeChild(clonedExportArea);
+            }
+        }
+
+        // Handle Global Unit Change
+        document.getElementById('heightUnit').addEventListener('change', function(e) {
+            const newUnit = e.target.value;
+            const heightInput = document.getElementById('heightValue');
+            const currentVal = parseFloat(heightInput.value);
+            
+            if (!isNaN(currentVal)) {
+                const valInCm = unitToCm(currentVal, lastInputUnit);
+                heightInput.value = cmToUnit(valInCm, newUnit).toFixed(newUnit === 'm' ? 2 : 1);
+            }
+            
+            lastInputUnit = newUnit;
+            currentDisplayUnit = newUnit;
+            updateUI();
+        });
+
+        // Initialize and load from IndexedDB
+        (async () => {
+            try {
+                await initDB();
+                const savedTheme = await getSetting('theme');
+                if (savedTheme) applyTheme(savedTheme);
+                await loadFromIndexDB();
+                loadLanguagePreference();
+            } catch (error) {
+                console.error('IndexedDB error:', error);
+                updateUI();
+            }
+        })();
+    </script>
+</body>
+</html>
