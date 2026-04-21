@@ -877,6 +877,7 @@
                 comparing: 'เปรียบเทียบ',
                 disablePos: 'กรุณาปิดโหมดเปรียบเทียบก่อน',
                 noImage: 'ไม่มีรูปภาพ (แสดงเป็นเงา)',
+                noName: 'ไม่มีชื่อ',
                 edit: 'แก้ไข',
                 enableCompare: 'เปิดเส้นเปรียบเทียบ',
                 disableCompare: 'ปิดเส้นเปรียบเทียบ',
@@ -921,6 +922,7 @@
                 comparing: 'Compare',
                 disablePos: 'Please disable comparison mode first',
                 noImage: 'No image (shown as shadow)',
+                noName: 'No name',
                 edit: 'Edit',
                 enableCompare: 'Enable Comparison Line',
                 disableCompare: 'Disable Comparison Line',
@@ -965,6 +967,7 @@
                 comparing: '比較中',
                 disablePos: '比較モードを先に無効にしてください',
                 noImage: '画像なし（シャドーで表示）',
+                noName: '名前なし',
                 edit: '編集',
                 enableCompare: '比較線を有効にする',
                 disableCompare: '比較線を無効にする',
@@ -1008,6 +1011,7 @@
                 comparing: '比较中',
                 disablePos: '请先禁用比较模式',
                 noImage: '无图像（显示为阴影）',
+                noName: '无名称',
                 edit: '编辑',
                 enableCompare: '开启比较线',
                 disableCompare: '关闭比较线',
@@ -1035,6 +1039,7 @@
                 langTitle: '切换语言'
             },
             kr: {
+                noName: '이름 없음',
                 title: '키 비교',
                 inputLabel: '캐릭터/객체 이름',
                 inputPlaceholder: '예: 자몬',
@@ -1412,7 +1417,7 @@
         }
 
         function addCharacter() {
-            const name = document.getElementById('nameInput').value || 'ไม่มีชื่อ';
+            const name = document.getElementById('nameInput').value || translations[currentLanguage].noName;
             const rawVal = parseFloat(document.getElementById('heightValue').value);
             const unit = document.getElementById('heightUnit').value;
             const imgFile = document.getElementById('imageInput').files[0];
@@ -1790,6 +1795,18 @@
             }
         }
 
+        function confirmDeleteCharacter(id) {
+            const char = characters.find(c => c.id === id);
+            const charName = char ? char.name : 'Unknown';
+            const t = translations[currentLanguage];
+            const message = `${t.delete} "${charName}" ?`;
+            
+            if (confirm(message)) {
+                removeCharacter(id);
+            }
+            closeContextMenu();
+        }
+
         function togglePositioning(id) {
             const char = characters.find(c => c.id === id);
             if (!char) return;
@@ -1937,6 +1954,7 @@
             menuHTML += `
                 <hr style="opacity: 0.1; margin: 4px 0;">
                 <button onclick="resetCharacterLayout(${charId})" style="color: #ef4444;">↺ ${t.reset}</button>
+                <button onclick="confirmDeleteCharacter(${charId})" style="color: #ef4444;">🗑️ ${t.delete}</button>
             `;
 
             menu.innerHTML = menuHTML;
