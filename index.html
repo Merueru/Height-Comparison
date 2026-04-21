@@ -437,6 +437,38 @@
             cursor: grabbing;
         }
 
+        /* Chart drag-reorder styles */
+        .character-item.chart-dragging {
+            transform: scale(1.15);
+            z-index: 200 !important;
+            filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.3));
+            opacity: 0.9;
+        }
+
+        .character-item.chart-drag-over-left::before {
+            content: '';
+            position: absolute;
+            left: -8px;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: #3b82f6;
+            border-radius: 2px;
+            z-index: 150;
+        }
+
+        .character-item.chart-drag-over-right::after {
+            content: '';
+            position: absolute;
+            right: -8px;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: #3b82f6;
+            border-radius: 2px;
+            z-index: 150;
+        }
+
         .position-guide {
             position: absolute;
             z-index: 65;
@@ -564,6 +596,88 @@
             transition: left 0.3s ease;
         }
 
+        /* Modal Dark Mode Support */
+        .modal .p-6 {
+            background-color: var(--sidebar-bg);
+            color: var(--text-main);
+        }
+
+        .modal label {
+            color: var(--text-main);
+        }
+
+        .modal input[type="text"],
+        .modal input[type="number"],
+        .modal input[type="color"],
+        .modal input[type="file"] {
+            background-color: var(--input-bg) !important;
+            border-color: var(--input-border) !important;
+            color: var(--text-main) !important;
+        }
+
+        .modal input[type="text"]::placeholder,
+        .modal input[type="number"]::placeholder {
+            color: var(--text-main);
+            opacity: 0.6;
+        }
+
+        .modal input[type="text"]:focus,
+        .modal input[type="number"]:focus {
+            border-color: #3b82f6 !important;
+        }
+
+        .modal input[type="file"]::file-selector-button {
+            background-color: var(--accent-box);
+            color: var(--text-main);
+            border: 0;
+        }
+
+        .modal-edit-image-drop {
+            border: 2px dashed var(--input-border);
+            background-color: var(--accent-box);
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .modal-edit-image-drop:hover {
+            border-color: #3b82f6;
+            background-color: var(--input-bg);
+        }
+
+        .modal-edit-image-drop.dragover {
+            border-color: #3b82f6;
+            background-color: var(--input-bg);
+            transform: scale(1.02);
+        }
+
+        .modal-edit-image-drop input[type="file"] {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+        }
+
+        .modal .btn-cancel {
+            background-color: var(--input-bg);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+        }
+
+        .modal .btn-cancel:hover {
+            background-color: var(--accent-box);
+        }
+
+        .modal .btn-save {
+            box-shadow: 0 4px 6px -1px var(--btn-shadow-blue);
+        }
+
     </style>
 </head>
 <body>
@@ -571,38 +685,46 @@
     <!-- Enhanced Edit Modal -->
     <div id="editModal" class="modal">
         <div class="modal-content-wrapper">
-            <div class="p-6 rounded-2xl shadow-2xl w-[320px] max-h-[90vh] overflow-y-auto">
-                <h3 class="text-xl font-bold mb-4 border-b pb-2" data-i18n="editTitle">แก้ไขข้อมูล</h3>
+            <div class="p-6 rounded-2xl shadow-2xl w-[320px] max-h-[90vh] overflow-y-auto border" style="border-color: var(--border-color);">
+                <h3 class="text-xl font-bold mb-4 border-b pb-2" style="border-color: var(--border-color);" data-i18n="editTitle">แก้ไขข้อมูล</h3>
                 
                 <div class="space-y-4">
                     <!-- Image Preview & Change -->
                     <div>
-                        <label class="block text-xs font-bold text-gray-500 mb-2 uppercase" data-i18n="currentImage">รูปภาพปัจจุบัน</label>
-                        <div id="modalImgPreviewContainer" class="mb-2">
+                        <label class="block text-xs font-bold mb-2 uppercase" data-i18n="currentImage">รูปภาพปัจจุบัน</label>
+                        <div id="modalImgPreviewContainer" class="mb-2 relative">
                             <!-- Preview injected here -->
                         </div>
-                        <input type="file" id="editImageInput" accept="image/*" class="w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:bg-blue-50 file:text-blue-700">
+                        <div id="modalImageDropZone" class="modal-edit-image-drop group text-center">
+                            <input type="file" id="editImageInput" accept="image/*">
+                            <div class="pointer-events-none space-y-1">
+                                <svg class="mx-auto h-6 w-6" style="color: var(--text-main); opacity: 0.5;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.587-1.587a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                                <p class="text-xs" style="color: var(--text-main); opacity: 0.7;" data-i18n="dragTipShort">คลิกหรือลากรูปมาวางที่นี่</p>
+                            </div>
+                        </div>
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold text-gray-500 mb-1 uppercase" data-i18n="inputLabel">ชื่อ</label>
+                        <label class="block text-xs font-bold mb-1 uppercase" data-i18n="inputLabel">ชื่อ</label>
                         <input type="text" id="editName" class="w-full border p-2 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold text-gray-500 mb-1 uppercase"><span data-i18n="heightLabel">ส่วนสูง</span> (<span class="current-unit-text">cm</span>)</label>
+                        <label class="block text-xs font-bold mb-1 uppercase"><span data-i18n="heightLabel">ส่วนสูง</span> (<span class="current-unit-text">cm</span>)</label>
                         <input type="number" id="editHeight" class="w-full border p-2 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold text-gray-500 mb-1 uppercase" data-i18n="lineColor">สีเส้นเปรียบเทียบ</label>
-                    <input type="color" id="editLineColor" class="w-full h-10 border p-1 rounded-lg cursor-pointer bg-transparent" onchange="updateColorPreview()">
+                        <label class="block text-xs font-bold mb-1 uppercase" data-i18n="lineColor">สีเส้นเปรียบเทียบ</label>
+                        <input type="color" id="editLineColor" class="w-full h-10 border p-1 rounded-lg cursor-pointer" onchange="updateColorPreview()">
                     </div>
                 </div>
 
                 <div class="flex gap-2 mt-8">
-                    <button onclick="closeEditModal()" class="flex-1 py-2.5 bg-gray-100 text-gray-600 font-medium rounded-xl hover:bg-gray-200 transition" data-i18n="cancel">ยกเลิก</button>
-                    <button onclick="saveEdit()" class="flex-1 py-2.5 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-200 transition" data-i18n="save">บันทึก</button>
+                    <button onclick="closeEditModal()" class="btn-cancel flex-1 py-2.5 font-medium rounded-xl hover:opacity-80 transition" data-i18n="cancel">ยกเลิก</button>
+                    <button onclick="saveEdit()" class="btn-save flex-1 py-2.5 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition" data-i18n="save">บันทึก</button>
                 </div>
             </div>
         </div>
@@ -694,7 +816,7 @@
 
         <div class="mt-4 flex flex-col md:flex-row justify-between items-center gap-4">
             <div id="dragTip" class="text-sm px-4 py-2 rounded-full border">
-                💡 <b>ลากแถบทางซ้าย</b> เพื่อเปลี่ยนลำดับรูป | <b>กดขวา</b> เพื่อจัดตำแหน่ง | <b>ปรับเส้น</b> เพื่อเปรียบเทียบจุดต่างๆ
+                💡 <b>ลากแถบทางซ้าย</b> เพื่อเปลี่ยนลำดับรูป | <b>ค้างตัวละครในตาราง</b> เพื่อย้ายตำแหน่ง | <b></b>กดขวา</b> เพื่อจัดตำแหน่ง | <b>ปรับเส้น</b> เพื่อเปรียบเทียบจุดต่างๆ
             </div>
             <button onclick="downloadImage()" class="bg-green-600 text-white py-3 px-8 rounded-xl hover:bg-green-700 shadow-lg transition font-bold flex items-center gap-2" style="box-shadow: 0 10px 15px -3px var(--btn-shadow-green);" data-i18n="downloadBtn">
                 <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-1m-4-4-4 4m0 0-4-4m4 4V4"></path></svg>
@@ -714,6 +836,18 @@
         let startOffsetX = 0, startOffsetY = 0;
         let startWidthCm = 0, startLeftCropCm = 0;
         let activeZIndexId = null;
+        let isAdjustingExtraLine = false;
+        let hiddenComparingChars = [];
+        let originalLineHeight = {};
+        
+        // Chart drag-reorder variables
+        let isChartDragging = false;
+        let chartDragCharId = null;
+        let chartDragStartX = 0;
+        let chartDragStartTime = 0;
+        let chartDragHoldTimer = null;
+        let draggedCharElement = null;
+        let dragOverCharId = null;
 
         const DB_NAME = 'HeightComparisonDB';
         const STORE_NAME = 'characters';
@@ -735,7 +869,7 @@
                 addBtn: 'เพิ่มเข้าไปในตาราง',
                 manageLabel: 'จัดการลำดับและรายการ',
                 emptyMsg: 'ยังไม่มีข้อมูล...',
-                dragTip: 'ลากแถบทางซ้ายเพื่อเปลี่ยนลำดับรูป | กดขวาเพื่อจัดตำแหน่ง | ปรับเส้นเพื่อเปรียบเทียบจุดต่างๆ',
+                dragTip: 'ลากแถบทางซ้ายเพื่อเปลี่ยนลำดับรูป | ค้างตัวละครในตารางเพื่อย้ายตำแหน่ง | กดขวาเพื่อจัดตำแหน่ง | ปรับเส้นเพื่อเปรียบเทียบจุดต่างๆ',
                 downloadBtn: 'บันทึกเป็นรูปภาพ',
                 editTitle: 'แก้ไขข้อมูล',
                 colorPreview: 'ตัวอย่างสี',
@@ -779,7 +913,7 @@
                 addBtn: 'Add to Comparison',
                 manageLabel: 'Manage List',
                 emptyMsg: 'No data yet...',
-                dragTip: 'Drag left bar to reorder | Right-click to position | Adjust line to compare height points',
+                dragTip: 'Drag left bar to reorder | Hold character in chart to move position | Right-click to position | Adjust line to compare height points',
                 downloadBtn: 'Download as Image',
                 editTitle: 'Edit Data',
                 colorPreview: 'Color Preview',
@@ -823,7 +957,7 @@
                 addBtn: '比較に追加',
                 manageLabel: 'リスト管理',
                 emptyMsg: 'データなし...',
-                dragTip: '左バーをドラッグして並び替え | 右クリックで位置調整 | ラインを調整して身長ポイントを比較',
+                dragTip: '左バーをドラッグして並び替え | チャート内のキャラクターを長押しして移動 | 右クリックで位置調整 | ラインを調整して身長ポイントを比較',
                 downloadBtn: '画像としてダウンロード',
                 editTitle: 'データ編集',
                 colorPreview: '色プレビュー',
@@ -866,7 +1000,7 @@
                 addBtn: '添加比较',
                 manageLabel: '管理列表',
                 emptyMsg: '暂无数据...',
-                dragTip: '拖动左边栏重新排序 | 右键调整位置 | 调整线条比较身高点',
+                dragTip: '拖动左边栏重新排序 | 长按图表中的角色移动位置 | 右键调整位置 | 调整线条比较身高点',
                 downloadBtn: '下载为图片',
                 editTitle: '编辑数据',
                 colorPreview: '颜色预览',
@@ -910,7 +1044,7 @@
                 addBtn: '비교에 추가',
                 manageLabel: '목록 관리',
                 emptyMsg: '데이터 없음...',
-                dragTip: '왼쪽 막대를 드래그하여 재정렬 | 마우스 오른쪽 클릭으로 위치 조정 | 선을 조정하여 키 포인트 비교',
+                dragTip: '왼쪽 막대를 드래그하여 재정렬 | 차트에서 캐릭터를 길게 눌러 이동 | 마우스 오른쪽 클릭으로 위치 조정 | 선을 조정하여 키 포인트 비교',
                 downloadBtn: '이미지로 다운로드',
                 editTitle: '데이터 편집',
                 colorPreview: '색상 미리보기',
@@ -1207,16 +1341,19 @@
             const fileInput = document.getElementById('imageInput');
             const previewContainer = document.getElementById('imagePreviewContainer');
             const previewImg = document.getElementById('imagePreview');
+            const dropZone = document.getElementById('imageDropZone');
 
             if (fileInput.files && fileInput.files[0]) {
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     previewImg.src = e.target.result;
                     previewContainer.classList.remove('hidden');
+                    dropZone.classList.add('hidden');
                 };
                 reader.readAsDataURL(fileInput.files[0]);
             } else {
                 previewContainer.classList.add('hidden');
+                dropZone.classList.remove('hidden');
                 previewImg.src = '';
             }
         }
@@ -1224,7 +1361,54 @@
         function clearImagePreview() {
             document.getElementById('imageInput').value = '';
             document.getElementById('imagePreviewContainer').classList.add('hidden');
+            document.getElementById('imageDropZone').classList.remove('hidden');
             document.getElementById('imagePreview').src = '';
+        }
+
+        // Modal Image Preview and Drag-Drop
+        function updateModalImagePreview() {
+            const fileInput = document.getElementById('editImageInput');
+            const previewContainer = document.getElementById('modalImgPreviewContainer');
+
+            if (fileInput.files && fileInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    previewContainer.innerHTML = `<img src="${e.target.result}" class="edit-preview-img">`;
+                };
+                reader.readAsDataURL(fileInput.files[0]);
+            }
+        }
+
+        // Setup modal image drop zone
+        const modalDropZone = document.getElementById('modalImageDropZone');
+        if (modalDropZone) {
+            ['dragover', 'dragenter'].forEach(eventName => {
+                modalDropZone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    modalDropZone.classList.add('dragover');
+                }, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                modalDropZone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    modalDropZone.classList.remove('dragover');
+                }, false);
+            });
+
+            modalDropZone.addEventListener('drop', (e) => {
+                document.getElementById('editImageInput').files = e.dataTransfer.files;
+                updateModalImagePreview();
+            }, false);
+
+            // Click to open file picker
+            modalDropZone.addEventListener('click', () => {
+                document.getElementById('editImageInput').click();
+            }, false);
+
+            document.getElementById('editImageInput').addEventListener('change', updateModalImagePreview);
         }
 
         function addCharacter() {
@@ -1275,7 +1459,7 @@
             }
 
             document.getElementById('nameInput').value = '';
-            document.getElementById('imageInput').value = '';
+            clearImagePreview();
         }
 
         function openEditModal(id) {
@@ -1408,6 +1592,9 @@
                     char.compHeight = char.height; 
                     char.adjustStartHeight = char.height;
                     char.originalImageOffset = char.imageOffset || 0;
+                    // เก็บค่า lineOnTop ตั้งต้น แล้วนำเส้นมาด้านหน้าชั่วคราวเพื่อให้ลากได้ง่าย
+                    char.adjustOriginalLineOnTop = char.lineOnTop;
+                    char.lineOnTop = true;
                     char.isAdjusting = true;
                     characters.forEach(c => { if(c.id !== id) c.isAdjusting = false; });
                 } else {
@@ -1424,6 +1611,12 @@
                     // รีเซ็ตเส้นกลับไปที่ระดับส่วนสูงจริงของตัวละครเพื่อให้หัวพอดีกับเลขส่วนสูงบนไม้บรรทัด
                     char.compHeight = char.height;
 
+                    // คืนค่า lineOnTop ให้เป็นตำแหน่งเดิมตอนเสร็จปรับ
+                    if (char.adjustOriginalLineOnTop !== undefined) {
+                        char.lineOnTop = char.adjustOriginalLineOnTop;
+                        delete char.adjustOriginalLineOnTop;
+                    }
+
                     char.isAdjusting = false;
                     delete char.originalImageOffset;
                     saveToIndexDB();
@@ -1438,6 +1631,11 @@
             // Restore backup values
             char.compHeight = char.adjustStartHeight;
             char.imageOffset = char.originalImageOffset;
+            // คืนค่า lineOnTop ให้เป็นตำแหน่งเดิมตอนยกเลิก
+            if (char.adjustOriginalLineOnTop !== undefined) {
+                char.lineOnTop = char.adjustOriginalLineOnTop;
+                delete char.adjustOriginalLineOnTop;
+            }
             char.isAdjusting = false;
             delete char.originalImageOffset;
             updateUI();
@@ -1461,9 +1659,15 @@
         }
 
         function startAdjustingExtra(e, id) {
+            e.preventDefault();
             isDraggingExtra = true;
             dragLineId = id;
-            e.preventDefault();
+            const line = extraLines.find(l => l.id === id);
+            if (line) {
+                originalLineHeight[id] = line.height;
+                isAdjustingExtraLine = true;
+                dragStartY = e.touches ? e.touches[0].clientY : e.clientY;
+            }
         }
 
         function toggleExtraLineOrder(id) {
@@ -1497,7 +1701,6 @@
             menu.id = 'contextMenu';
             menu.className = 'context-menu';
 
-            // ตรวจสอบพิกัดเมาส์หรือทัช เพื่อป้องกันเมนูกระโดดไปซ้ายบน (0,0)
             const x = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
             const y = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
 
@@ -1505,22 +1708,55 @@
             menu.style.top = y + 'px';
 
             const t = translations[currentLanguage];
-            menu.innerHTML = `
-                <button onclick="toggleExtraLineOrder(${lineId})">
-                    ${line.onTop ? t.lineBehind : t.lineOnTop}
-                </button>
-                <div style="padding: 8px 14px; border-top: 1px solid var(--border-color);">
-                    <div style="font-size: 11px; font-weight: bold; color: var(--text-main); margin-bottom: 5px;">${t.lineColor}</div>
-                    <input type="color" value="${line.color}" onchange="changeExtraLineColor(${lineId}, this.value)" style="width: 100%; height: 30px; cursor: pointer; background: transparent; border: none; padding: 0;">
-                </div>
-                <hr style="opacity: 0.1; margin: 4px 0;">
-                <button onclick="removeExtraLine(${lineId})" style="color: #ef4444;">🗑️ ${t.delete}</button>
-            `;
+            
+            // ถ้ากำลังปรับเส้นอยู่ ให้แสดงแค่ปุ่มยืนยัน/ยกเลิก
+            if (isAdjustingExtraLine && dragLineId === lineId) {
+                menu.innerHTML = `
+                    <button onclick="confirmLineAdjust()" style="color: #22c55e;">✓ ${t.ok}</button>
+                    <button onclick="cancelLineAdjust()" style="color: #ef4444;">✕ ${t.cancel}</button>
+                `;
+            } else {
+                // แสดงเมนูปกติ
+                menu.innerHTML = `
+                    <button onclick="toggleExtraLineOrder(${lineId})">
+                        ${line.onTop ? t.lineBehind : t.lineOnTop}
+                    </button>
+                    <div style="padding: 8px 14px; border-top: 1px solid var(--border-color);">
+                        <div style="font-size: 11px; font-weight: bold; color: var(--text-main); margin-bottom: 5px;">${t.lineColor}</div>
+                        <input type="color" value="${line.color}" onchange="changeExtraLineColor(${lineId}, this.value)" style="width: 100%; height: 30px; cursor: pointer; background: transparent; border: none; padding: 0;">
+                    </div>
+                    <hr style="opacity: 0.1; margin: 4px 0;">
+                    <button onclick="removeExtraLine(${lineId})" style="color: #ef4444;">🗑️ ${t.delete}</button>
+                `;
+            }
 
             document.body.appendChild(menu);
             setTimeout(() => {
                 document.addEventListener('click', closeContextMenu);
             }, 0);
+        }
+        
+        function confirmLineAdjust() {
+            isAdjustingExtraLine = false;
+            const line = extraLines.find(l => l.id === dragLineId);
+            if (line) {
+                delete originalLineHeight[dragLineId];
+            }
+            saveToIndexDB();
+            renderChart();
+            closeContextMenu();
+        }
+        
+        function cancelLineAdjust() {
+            const line = extraLines.find(l => l.id === dragLineId);
+            if (line && originalLineHeight[dragLineId] !== undefined) {
+                line.height = originalLineHeight[dragLineId];
+                delete originalLineHeight[dragLineId];
+            }
+            isAdjustingExtraLine = false;
+            saveToIndexDB();
+            renderChart();
+            closeContextMenu();
         }
 
         function toggleVisibility(id) {
@@ -1555,34 +1791,46 @@
         }
 
         function togglePositioning(id) {
-            // Prevent positioning mode during comparing mode
             const char = characters.find(c => c.id === id);
-            if (char && char.comparing) {
-                alert(translations[currentLanguage].disablePos);
-                return;
-            }
+            if (!char) return;
 
-            if (char) {
-                if (!char.isPositioning) {
-                    // Backup values for Cancel
-                    char.originalPos = {
-                        offsetX: char.positionOffsetX || 0,
-                        offsetY: char.positionOffsetY || 0,
-                        widthCm: char.customWidthCm, // Backup current width (could be null)
-                        leftCropCm: char.leftCropCm || 0
-                    };
-                    char.isPositioning = true;
-                    activeZIndexId = id;
-                } else {
-                    char.isPositioning = false;
-                    delete char.originalPos;
-                }
-                // Disable other positioning modes
-                characters.forEach(c => { 
-                    if (c.id !== id) c.isPositioning = false; 
+            if (!char.isPositioning) {
+                // Backup values for Cancel
+                char.originalPos = {
+                    offsetX: char.positionOffsetX || 0,
+                    offsetY: char.positionOffsetY || 0,
+                    widthCm: char.customWidthCm,
+                    leftCropCm: char.leftCropCm || 0
+                };
+                
+                // เมื่อเปิดโหมดจัดตำแหน่ง ให้ซ่อนเส้นเปรียบเทียบชั่วคราว
+                hiddenComparingChars = characters.filter(c => c.comparing).map(c => c.id);
+                hiddenComparingChars.forEach(cId => {
+                    const c = characters.find(ch => ch.id === cId);
+                    if (c) c.comparing = false;
                 });
+                
+                char.isPositioning = true;
+                activeZIndexId = id;
+            } else {
+                // เมื่อออกจากโหมดจัดตำแหน่ง ให้แสดงเส้นเปรียบเทียบที่ซ่อนไว้กลับมา
+                hiddenComparingChars.forEach(cId => {
+                    const c = characters.find(ch => ch.id === cId);
+                    if (c) c.comparing = true;
+                });
+                hiddenComparingChars = [];
+                
+                char.isPositioning = false;
+                delete char.originalPos;
             }
-            updateUI();
+            
+            // Disable other positioning modes
+            characters.forEach(c => { 
+                if (c.id !== id) c.isPositioning = false; 
+            });
+            
+            saveToIndexDB();
+            renderChart();
         }
 
         function confirmPositioning(id) {
@@ -1590,8 +1838,16 @@
             if (char) {
                 char.isPositioning = false;
                 delete char.originalPos;
-                updateUI();
+                
+                // แสดงเส้นเปรียบเทียบที่ซ่อนไว้กลับมา
+                hiddenComparingChars.forEach(cId => {
+                    const c = characters.find(ch => ch.id === cId);
+                    if (c) c.comparing = true;
+                });
+                hiddenComparingChars = [];
+                
                 saveToIndexDB();
+                renderChart();
             }
         }
 
@@ -1604,7 +1860,16 @@
                 char.leftCropCm = char.originalPos.leftCropCm;
                 char.isPositioning = false;
                 delete char.originalPos;
-                updateUI();
+                
+                // แสดงเส้นเปรียบเทียบที่ซ่อนไว้กลับมา
+                hiddenComparingChars.forEach(cId => {
+                    const c = characters.find(ch => ch.id === cId);
+                    if (c) c.comparing = true;
+                });
+                hiddenComparingChars = [];
+                
+                saveToIndexDB();
+                renderChart();
             }
         }
 
@@ -1671,11 +1936,6 @@
             
             menuHTML += `
                 <hr style="opacity: 0.1; margin: 4px 0;">
-                <button onclick="toggleAllComparing(true)">${t.enableAllCompare}</button>
-                <button onclick="toggleAllComparing(false)">${t.disableAllCompare}</button>
-                <button onclick="toggleAllLineOrder(true)">${t.allLineOnTop}</button>
-                <button onclick="toggleAllLineOrder(false)">${t.allLineBehind}</button>
-                <hr style="opacity: 0.1; margin: 4px 0;">
                 <button onclick="resetCharacterLayout(${charId})" style="color: #ef4444;">↺ ${t.reset}</button>
             `;
 
@@ -1685,6 +1945,41 @@
             renderChart(); // อัปเดตเพื่อให้ตัวละครที่ถูกเลือกขึ้นมาอยู่เลเยอร์บน
 
             // Close menu when clicking elsewhere
+            setTimeout(() => {
+                document.addEventListener('click', closeContextMenu);
+            }, 0);
+        }
+
+        function showChartContextMenu(e) {
+            e.preventDefault();
+
+            // Remove existing context menu
+            const existing = document.getElementById('contextMenu');
+            if (existing) existing.remove();
+
+            const menu = document.createElement('div');
+            menu.id = 'contextMenu';
+            menu.className = 'context-menu';
+
+            const x = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+            const y = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+
+            menu.style.left = x + 'px';
+            menu.style.top = y + 'px';
+
+            const t = translations[currentLanguage];
+
+            let menuHTML = `
+                <button onclick="toggleAllComparing(true)">${t.enableAllCompare}</button>
+                <button onclick="toggleAllComparing(false)">${t.disableAllCompare}</button>
+                <hr style="opacity: 0.1; margin: 4px 0;">
+                <button onclick="toggleAllLineOrder(true)">${t.allLineOnTop}</button>
+                <button onclick="toggleAllLineOrder(false)">${t.allLineBehind}</button>
+            `;
+
+            menu.innerHTML = menuHTML;
+            document.body.appendChild(menu);
+
             setTimeout(() => {
                 document.addEventListener('click', closeContextMenu);
             }, 0);
@@ -1708,6 +2003,21 @@
             renderList();
             renderChart();
         }
+
+        // Add context menu listener to chart container for empty area clicks
+        document.addEventListener('DOMContentLoaded', () => {
+            const chartContainer = document.getElementById('chart');
+            if (chartContainer) {
+                chartContainer.addEventListener('contextmenu', (e) => {
+                    // Check if right-click is on a character item
+                    const charItem = e.target.closest('.character-item');
+                    if (!charItem) {
+                        // Only show chart menu if not clicking on a character
+                        showChartContextMenu(e);
+                    }
+                });
+            }
+        });
 
         function renderList() {
             if (characters.length === 0) {
@@ -1953,6 +2263,12 @@
                     const imgWrapper = charEl.querySelector('.character-img-wrapper');
                     imgWrapper.addEventListener('mousedown', (e) => startPositioningDrag(e, char.id));
                     imgWrapper.addEventListener('touchstart', (e) => startPositioningDrag(e, char.id), {passive: false});
+                } else {
+                    // Add chart drag-reorder listeners (when NOT in positioning mode)
+                    // Use mousedown/touchstart on the entire character element
+                    charEl.style.cursor = 'grab';
+                    charEl.addEventListener('mousedown', startChartDrag);
+                    charEl.addEventListener('touchstart', startChartDrag, {passive: false});
                 }
 
                 chart.appendChild(charEl);
@@ -2039,6 +2355,11 @@
                 // คำนวณความสูงจากเส้น 0cm (ซึ่งอยู่สูงจากขอบล่างของ element 30px)
                 let yFromBottom = (rect.bottom - 30) - clientY;
                 let newHeightCm = yFromBottom / pxPerCm;
+
+                // Shift + drag snap to 10cm intervals
+                if (e.shiftKey) {
+                    newHeightCm = Math.round(newHeightCm / 10) * 10;
+                }
 
                 // Bounds locking
                 if (newHeightCm < 0) newHeightCm = 0;
@@ -2165,6 +2486,169 @@
             currentDisplayUnit = newUnit;
             updateUI();
         });
+
+        // Chart Drag-Reorder Functions
+        function startChartDrag(e) {
+            // Get charId from the element's data attribute
+            const charEl = e.currentTarget;
+            const charId = parseInt(charEl.dataset.id);
+            
+            e.preventDefault();
+            // Ignore if positioning mode is active or already dragging
+            if (isChartDragging) return;
+            
+            const char = characters.find(c => c.id === charId);
+            if (char && char.isPositioning) return;
+
+            // Start hold timer (0.5 seconds)
+            chartDragCharId = charId;
+            chartDragStartX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+            chartDragStartTime = Date.now();
+            draggedCharElement = charEl;
+
+            // Set hold timer - after 0.5s, enable drag
+            chartDragHoldTimer = setTimeout(() => {
+                isChartDragging = true;
+                if (draggedCharElement) {
+                    draggedCharElement.classList.add('chart-dragging');
+                }
+            }, 200);
+
+            // Set up global listeners
+            document.addEventListener('mousemove', handleChartDragMove);
+            document.addEventListener('touchmove', handleChartDragMove);
+            document.addEventListener('mouseup', handleChartDragEnd);
+            document.addEventListener('touchend', handleChartDragEnd);
+        }
+
+        function handleChartDragMove(e) {
+            // If timer not set yet, cancel drag
+            if (!chartDragHoldTimer) return;
+            
+            const currentX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+            
+            if (!isChartDragging) {
+                // Check if moved more than 10px before timer ends - cancel drag
+                if (Math.abs(currentX - chartDragStartX) > 10) {
+                    clearTimeout(chartDragHoldTimer);
+                    chartDragHoldTimer = null;
+                    chartDragCharId = null;
+                    document.removeEventListener('mousemove', handleChartDragMove);
+                    document.removeEventListener('touchmove', handleChartDragMove);
+                    document.removeEventListener('mouseup', handleChartDragEnd);
+                    document.removeEventListener('touchend', handleChartDragEnd);
+                    return;
+                }
+            } else {
+                // Already dragging - update visual feedback
+                const chart = document.getElementById('chart');
+                const allChars = chart.querySelectorAll('.character-item');
+                
+                allChars.forEach(charEl => {
+                    const charId = parseInt(charEl.dataset.id);
+                    if (charId === chartDragCharId) return;
+                    
+                    const rect = charEl.getBoundingClientRect();
+                    const charCenterX = rect.left + rect.width / 2;
+                    
+                    // Clear previous state
+                    charEl.classList.remove('chart-drag-over-left', 'chart-drag-over-right');
+                    
+                    // Show indicator if close to this character
+                    if (Math.abs(charCenterX - currentX) < rect.width) {
+                        if (currentX < charCenterX) {
+                            charEl.classList.add('chart-drag-over-left');
+                        } else {
+                            charEl.classList.add('chart-drag-over-right');
+                        }
+                    }
+                });
+            }
+        }
+
+        function handleChartDragEnd(e) {
+            clearTimeout(chartDragHoldTimer);
+            
+            // Remove listeners immediately
+            document.removeEventListener('mousemove', handleChartDragMove);
+            document.removeEventListener('touchmove', handleChartDragMove);
+            document.removeEventListener('mouseup', handleChartDragEnd);
+            document.removeEventListener('touchend', handleChartDragEnd);
+            
+            if (isChartDragging && chartDragCharId !== null) {
+                // Perform reorder
+                const chart = document.getElementById('chart');
+                const currentX = e.clientX || (e.changedTouches && e.changedTouches[0] ? e.changedTouches[0].clientX : chartDragStartX);
+                const allChars = chart.querySelectorAll('.character-item');
+                
+                let dropIndex = -1;
+                let minDistance = Infinity;
+                
+                allChars.forEach((charEl) => {
+                    const charId = parseInt(charEl.dataset.id);
+                    if (charId === chartDragCharId) return;
+                    
+                    const rect = charEl.getBoundingClientRect();
+                    const charCenterX = rect.left + rect.width / 2;
+                    const distance = Math.abs(charCenterX - currentX);
+                    
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        // Find actual index in characters array
+                        const charInArray = characters.find(c => c.id === charId);
+                        if (charInArray) {
+                            dropIndex = characters.indexOf(charInArray);
+                        }
+                    }
+                });
+                
+                // Reorder in array
+                if (dropIndex !== -1) {
+                    const draggedChar = characters.find(c => c.id === chartDragCharId);
+                    const draggedIndex = characters.indexOf(draggedChar);
+                    
+                    if (draggedIndex !== -1 && draggedIndex !== dropIndex) {
+                        // Remove from current position
+                        characters.splice(draggedIndex, 1);
+                        
+                        // Adjust drop index if dragged from left
+                        if (draggedIndex < dropIndex) {
+                            dropIndex--;
+                        }
+                        
+                        // Insert at new position
+                        characters.splice(dropIndex, 0, draggedChar);
+                        
+                        // Update order field for consistency
+                        characters.forEach((char, idx) => {
+                            char.order = idx;
+                        });
+                        
+                        saveToIndexDB();
+                    }
+                }
+            }
+            
+            // Clean up
+            if (draggedCharElement) {
+                draggedCharElement.classList.remove('chart-dragging', 'chart-drag-over-left', 'chart-drag-over-right');
+            }
+            const chart = document.getElementById('chart');
+            if (chart) {
+                chart.querySelectorAll('.character-item').forEach(el => {
+                    el.classList.remove('chart-drag-over-left', 'chart-drag-over-right');
+                });
+            }
+            
+            isChartDragging = false;
+            chartDragCharId = null;
+            chartDragHoldTimer = null;
+            draggedCharElement = null;
+            dragOverCharId = null;
+            
+            // Re-render to show new order
+            updateUI();
+        }
 
         // Initialize and load from IndexedDB
         (async () => {
